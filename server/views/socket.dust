@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{+title /}</title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<div id="wrapper">
+
+</div>
+
+</body>
+<script src="assets/js/socket.js"></script>
+</html>
