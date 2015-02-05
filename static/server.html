@@ -31,21 +31,24 @@
 	<!-- css头部加载 有助于 浏览器 渲染 -->
 	<link rel="stylesheet" href="assets/css/reset.css" /><!-- css 重置 -->
     <link rel="stylesheet" href="assets/libs/sweetalert/0.4.1/sweet-alert.css"/>
-	<link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/libs/magnific-popup.js/1.0.0/magnific-popup.css"/>
+	<link rel="stylesheet" href="assets/css/server.css" />
 	<!-- modernizr 用于处理 各浏览器 兼容 因为要 处理css样式兼容 所以 头部加载 -->
 	<script src="assets/libs/modernizr/2.8.3/modernizr.min.js"></script>
+    <script data-main="assets/js/server.js" src="assets/libs/require.js/2.1.15/require.js"></script>
 </head>
 
 <body>
 <!-- 为何要用这个 div? 请看http://camendesign.com/code/developpeurs_sans_frontieres -->
-<div class="wrapper">
-
+<div id="wrapper">
+    <div id="main">
+        <div id="leftCent"></div>
+        <div id="rightCent"></div>
+    </div>
+    <div id="test-popup" class="white-popup mfp-hide">
+        Popup content
+    </div>
 </div>
 <!-- js 紧贴</body> 页面渲染完成 后处理 js 有助于 加快 页面响应速度 -->
-<script src="assets/libs/sweetalert/0.4.1/sweet-alert.min.js"></script>
-<script src='assets/libs/jquery/1.11.2/jquery.min.js'></script>
-<script src="assets/libs/dustjs-linkedin/2.5.1/dust-full.js"></script>
-<script src="assets/libs/dustjs-helpers/1.5.0/dust-helpers.js"></script>
-<script src="assets/js/dust-test.js"></script>
 </body>
 </html>
