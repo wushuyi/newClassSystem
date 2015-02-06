@@ -60,6 +60,7 @@
     "File": true,
     "FormData": true,
     "setTimeout": true,
+    "clearTimeout": true,
     "browser": true,
     "couch": false,
     "devel": true,

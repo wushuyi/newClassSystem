@@ -32,7 +32,9 @@
 	<link rel="stylesheet" href="assets/css/reset.css" /><!-- css 重置 -->
     <link rel="stylesheet" href="assets/css/pub-style.css"/>
     <link rel="stylesheet" href="assets/libs/sweetalert/0.4.1/sweet-alert.css"/>
+    <link rel="stylesheet" href="assets/libs/jScrollPane/2.0.20/jquery.jscrollpane.css"/>
     <link rel="stylesheet" href="assets/libs/magnific-popup.js/1.0.0/magnific-popup.css"/>
+    <link rel="stylesheet" href="assets/libs/umeditor-hf/1.2.2/themes/default/css/umeditor.css"/>
 	<link rel="stylesheet" href="assets/css/server.css" />
 	<!-- modernizr 用于处理 各浏览器 兼容 因为要 处理css样式兼容 所以 头部加载 -->
 	<script src="assets/libs/modernizr/2.8.3/modernizr.min.js"></script>
@@ -48,6 +50,11 @@
                 <h2 class="title">教案</h2>
                 <h3 class="run-time">本课程已经进行了: <span>0</span> 分钟</h3>
                 <button class="close-class btn btn-primary">结束课程</button>
+            </div>
+            <div class="plan-cent">
+                <div class="scroll">
+                 <img id="plan-img" class="plan-img" src="assets/images/width600.png" alt="教案"/>
+                </div>
             </div>
             <div class="toolbar">
                 <div class="tool-btn task-ctl-btn">聊天</div>
@@ -69,6 +76,11 @@
             <div class="topbar">
                 <h2 class="title">题目 <span class="num">0</span></h2>
             </div>
+            <div class="sketchpad-cent">
+                <div class="scroll">
+                    <img id="sketchpad-img" class="plan-img" src="assets/images/width600.png" alt="教案"/>
+                </div>
+            </div>
             <div class="toolbar">
                 <div class="tool-btn sound-btn"></div>
                 <div class="separated"></div>
@@ -88,6 +100,20 @@
                 <div class="tool-btn prev-btn"></div>
                 <div class="tool-num">999</div>
                 <div class="tool-btn next-btn"></div>
+            </div>
+        </div>
+        <div id="task-box-cent">
+            <div class="task-topbar">
+                <div id="task-name" class="task-name">老师A</div>
+                <div class="task-close"></div>
+            </div>
+            <div class="task-cent">
+                <div class="scroll">
+                    <div style="height: 2000px"></div>
+                </div>
+            </div>
+            <div class="task-btmbar">
+                <div id="myEditor" contenteditable="true"></div>
             </div>
         </div>
     </div>

@@ -87,7 +87,7 @@
             editor = _editor;
             this.widget = $widget;
 
-            emotion.SmileyPath = _editor.options.emotionLocalization === true ? emotionUrl + 'images/' : "./assets/js/libs/umeditor-1.2.2/dialogs/emotion/images/hficons/";
+            emotion.SmileyPath = _editor.options.emotionLocalization === true ? emotionUrl + 'images/' : "./assets/libs/umeditor-hf/1.2.2/dialogs/emotion/images/hficons/";
             emotion.SmileyBox = me.createTabList( emotion.tabNum );
             emotion.tabExist = me.createArr( emotion.tabNum );
 
