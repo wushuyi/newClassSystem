@@ -1,54 +1,3 @@
-/* A Linux- and Windows-friendly sans-serif font stack: http://prospects.mhurrell.co.uk/post/updating-the-helvetica-font-stack */
-body {
-  font: 13px Helmet, Freesans, sans-serif;
-}
-/* Using local fonts? Check out Font Squirrel's webfont generator: http://www.fontsquirrel.com/tools/webfont-generator */
-/* We like off-black for text. */
-body,
-select,
-input,
-textarea {
-  color: #333;
-}
-a {
-  color: #03f;
-}
-a:hover {
-  color: #69f;
-}
-/* Custom text-selection colors (remove any text shadows: http://twitter.com/miketaylr/status/12228805301) */
-::-moz-selection {
-  background: #fcd700;
-  color: #fff;
-  text-shadow: none;
-}
-::selection {
-  background: #fcd700;
-  color: #fff;
-  text-shadow: none;
-}
-/*	j.mp/webkit-tap-highlight-color */
-a:link {
-  -webkit-tap-highlight-color: #fcd700;
-}
-ins {
-  background-color: #fcd700;
-  color: #000;
-  text-decoration: none;
-}
-mark {
-  background-color: #fcd700;
-  color: #000;
-  font-style: italic;
-  font-weight: bold;
-}
-/* Mozilla dosen't style place holders by default */
-input:-moz-placeholder {
-  color: #a9a9a9;
-}
-textarea:-moz-placeholder {
-  color: #a9a9a9;
-}
 #wrapper {
   right: 0;
   top: 0;
@@ -63,7 +12,7 @@ textarea:-moz-placeholder {
   margin: 0 auto;
   position: relative;
 }
-#leftCent {
+#left-cent {
   top: 0;
   left: 0;
   width: 744px;
@@ -71,7 +20,7 @@ textarea:-moz-placeholder {
   background: #FFFFFF;
   position: absolute;
 }
-#rightCent {
+#right-cent {
   top: 0;
   right: 0;
   width: 602px;
@@ -79,13 +28,223 @@ textarea:-moz-placeholder {
   background: #FFFFFF;
   position: absolute;
 }
-.white-popup {
+#left-cent .topbar,
+#right-cent .topbar {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  border-bottom: 2px dashed #E6E6E6;
+  position: absolute;
+}
+#left-cent .toolbar,
+#right-cent .toolbar {
+  right: 0;
+  left: 0;
+  bottom: 0;
+  height: 50px;
+  position: absolute;
+  border-top: 1px solid #D9D9D9;
+}
+#left-cent .title,
+#right-cent .title {
+  display: inline-block;
+  font-size: 18px;
+  color: #999999;
+  margin: 14px 0 0 30px;
+  padding: 2px;
   position: relative;
-  background: #FFF;
-  padding: 20px;
-  width: auto;
-  max-width: 500px;
-  margin: 20px auto;
+}
+#left-cent .title:after,
+#right-cent .title:after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: -6px;
+  right: 0;
+  left: 0;
+  border-bottom: 1px solid #999999;
+}
+#left-cent .separated,
+#right-cent .separated {
+  width: 1px;
+  height: 22px;
+  background: #F0f0f0;
+  margin: 14px 10px 12px 10px;
+  float: left;
+}
+#left-cent .tool-btn,
+#right-cent .tool-btn {
+  cursor: pointer;
+  float: left;
+  font-size: 14px;
+  height: 24px;
+  line-height: 24px;
+  color: #999999;
+  padding-left: 30px;
+  margin: 14px 10px 10px 10px;
+}
+#left-cent .tool-btn:before,
+#right-cent .tool-btn:before {
+  content: '';
+  width: 30px;
+  height: 26px;
+  display: block;
+  position: absolute;
+}
+#left-cent .task-ctl-btn,
+#right-cent .task-ctl-btn {
+  margin-left: 40px;
+  padding-left: 40px;
+}
+#left-cent .task-ctl-btn:before,
+#right-cent .task-ctl-btn:before {
+  margin-left: -40px;
+  background: url("../images/icon2.png") no-repeat 0px 0px;
+}
+#left-cent .add-error-btn,
+#right-cent .add-error-btn {
+  margin-left: 10px;
+  padding-left: 30px;
+}
+#left-cent .add-error-btn:before,
+#right-cent .add-error-btn:before {
+  margin-left: -40px;
+  background: url("../images/+.png") no-repeat 20px 8px;
+}
+#left-cent .play-video-btn,
+#right-cent .play-video-btn {
+  margin-left: 10px;
+  padding-left: 30px;
+}
+#left-cent .play-video-btn:before,
+#right-cent .play-video-btn:before {
+  margin-left: -30px;
+  background: url("../images/icon2.png") no-repeat -237px 0px;
+}
+#left-cent .play-sound-btn,
+#right-cent .play-sound-btn {
+  margin-left: 10px;
+  padding-left: 20px;
+}
+#left-cent .play-sound-btn:before,
+#right-cent .play-sound-btn:before {
+  margin-left: -30px;
+  background: url("../images/icon2.png") no-repeat -237px 0px;
+}
+#left-cent .more-plen,
+#right-cent .more-plen {
+  margin-left: 10px;
+  padding-left: 30px;
+}
+#left-cent .more-plen:before,
+#right-cent .more-plen:before {
+  margin-left: -30px;
+  background: url("../images/icon2.png") no-repeat -450px 0px;
+}
+#left-cent .prev-btn:before,
+#right-cent .prev-btn:before {
+  width: 20px;
+  background: url('../images/prev.png') no-repeat 4px 2px;
+}
+#left-cent .next-btn:before,
+#right-cent .next-btn:before {
+  width: 20px;
+  background: url('../images/next.png') no-repeat 4px 2px;
+}
+#left-cent .prev-btn,
+#right-cent .prev-btn,
+#left-cent .next-btn,
+#right-cent .next-btn {
+  padding-left: 0;
+  width: 20px;
+}
+#left-cent .tool-num,
+#right-cent .tool-num {
+  width: 50px;
+  cursor: pointer;
+  float: left;
+  height: 28px;
+  line-height: 28px;
+  color: #747474;
+  text-align: center;
+  margin: 12px 0 8px 0;
+  font-size: 24px;
+}
+#left-cent .sound-btn,
+#right-cent .sound-btn {
+  padding-left: 0;
+  width: 24px;
+  margin-left: 20px;
+}
+#left-cent .sound-btn:before,
+#right-cent .sound-btn:before {
+  background: url('../images/icons.png') no-repeat -114px -2px;
+}
+#left-cent .answer-btn,
+#right-cent .answer-btn {
+  position: relative;
+  padding-left: 20px;
+}
+#left-cent .answer-btn .checkbox,
+#right-cent .answer-btn .checkbox {
+  position: absolute;
+  top: 6px;
+  left: 0;
+}
+#left-cent .answer-btn:before,
+#right-cent .answer-btn:before {
+  content: normal;
+}
+#left-cent .eraser-btn,
+#right-cent .eraser-btn {
+  margin-left: 10px;
+  padding-left: 0;
+  width: 30px;
+}
+#left-cent .eraser-btn:before,
+#right-cent .eraser-btn:before {
+  background: url('../images/eraser.png') no-repeat center center;
+}
+#left-cent .pen-red-btn,
+#right-cent .pen-red-btn {
+  width: 26px;
+  padding-left: 0;
+}
+#left-cent .pen-red-btn:before,
+#right-cent .pen-red-btn:before {
+  background: #FF0000;
+  width: 26px;
+}
+#left-cent .pen-black-btn,
+#right-cent .pen-black-btn {
+  width: 26px;
+  padding-left: 0;
+}
+#left-cent .pen-black-btn:before,
+#right-cent .pen-black-btn:before {
+  background: #000000;
+  width: 26px;
+}
+#left-cent .add-page-btn,
+#right-cent .add-page-btn {
+  margin-left: 10px;
+  padding-left: 30px;
+}
+#left-cent .add-page-btn:before,
+#right-cent .add-page-btn:before {
+  margin-left: -40px;
+  background: url("../images/+.png") no-repeat 20px 8px;
+}
+#left-cent .run-time {
+  margin-left: 220px;
+  display: inline-block;
+  font-size: 16px;
+  color: #999999;
+}
+#left-cent .close-class {
+  float: right;
+  margin: 14px 30px 0px 0;
 }
 /* Media queries
 -------------------------------------------------------------------------------*/

@@ -30,6 +30,7 @@
 	<link rel="shortcut icon" href="favicon.ico" />
 	<!-- css头部加载 有助于 浏览器 渲染 -->
 	<link rel="stylesheet" href="assets/css/reset.css" /><!-- css 重置 -->
+    <link rel="stylesheet" href="assets/css/pub-style.css"/>
     <link rel="stylesheet" href="assets/libs/sweetalert/0.4.1/sweet-alert.css"/>
     <link rel="stylesheet" href="assets/libs/magnific-popup.js/1.0.0/magnific-popup.css"/>
 	<link rel="stylesheet" href="assets/css/server.css" />
@@ -42,11 +43,53 @@
 <!-- 为何要用这个 div? 请看http://camendesign.com/code/developpeurs_sans_frontieres -->
 <div id="wrapper">
     <div id="main">
-        <div id="leftCent"></div>
-        <div id="rightCent"></div>
-    </div>
-    <div id="test-popup" class="white-popup mfp-hide">
-        Popup content
+        <div id="left-cent">
+            <div class="topbar">
+                <h2 class="title">教案</h2>
+                <h3 class="run-time">本课程已经进行了: <span>0</span> 分钟</h3>
+                <button class="close-class btn btn-primary">结束课程</button>
+            </div>
+            <div class="toolbar">
+                <div class="tool-btn task-ctl-btn">聊天</div>
+                <div class="separated"></div>
+                <div class="tool-btn add-error-btn">加入错题本</div>
+                <div class="separated"></div>
+                <div class="tool-btn play-video-btn">直播</div>
+                <div class="separated"></div>
+                <div class="tool-btn play-sound-btn">录播</div>
+                <div class="separated"></div>
+                <div class="tool-btn more-plen">更多讲义</div>
+                <div class="separated"></div>
+                <div class="tool-btn prev-btn"></div>
+                <div class="tool-num">999</div>
+                <div class="tool-btn next-btn"></div>
+            </div>
+        </div>
+        <div id="right-cent">
+            <div class="topbar">
+                <h2 class="title">题目 <span class="num">0</span></h2>
+            </div>
+            <div class="toolbar">
+                <div class="tool-btn sound-btn"></div>
+                <div class="separated"></div>
+                <div class="tool-btn answer-btn">
+                    <label>
+                        学生答题
+                        <input class="checkbox" type="checkbox" name="answer-btn" id="answer-lock"/>
+                    </label>
+                </div>
+                <div class="separated"></div>
+                <div class="tool-btn eraser-btn"></div>
+                <div class="tool-btn pen-red-btn"></div>
+                <div class="tool-btn pen-black-btn"></div>
+                <div class="separated"></div>
+                <div class="tool-btn add-page-btn">空白页</div>
+                <div class="separated"></div>
+                <div class="tool-btn prev-btn"></div>
+                <div class="tool-num">999</div>
+                <div class="tool-btn next-btn"></div>
+            </div>
+        </div>
     </div>
 </div>
 <!-- js 紧贴</body> 页面渲染完成 后处理 js 有助于 加快 页面响应速度 -->

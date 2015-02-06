@@ -1,28 +1,3 @@
-/* A Linux- and Windows-friendly sans-serif font stack: http://prospects.mhurrell.co.uk/post/updating-the-helvetica-font-stack */
-body {font: 13px Helmet, Freesans, sans-serif;}
-
-/* Using local fonts? Check out Font Squirrel's webfont generator: http://www.fontsquirrel.com/tools/webfont-generator */
-
-/* We like off-black for text. */
-body, select, input, textarea {color: #333;}
-
-a {color: #03f;}
-a:hover {color: #69f;}
-
-/* Custom text-selection colors (remove any text shadows: http://twitter.com/miketaylr/status/12228805301) */
-::-moz-selection{background: #fcd700; color: #fff; text-shadow: none;}
-::selection {background: #fcd700; color: #fff; text-shadow: none;} 
-
-/*	j.mp/webkit-tap-highlight-color */
-a:link {-webkit-tap-highlight-color: #fcd700;} 
-
-ins {background-color: #fcd700; color: #000; text-decoration: none;}
-mark {background-color: #fcd700; color: #000; font-style: italic; font-weight: bold;}
-
-/* Mozilla dosen't style place holders by default */
-input:-moz-placeholder { color:#a9a9a9; }
-textarea:-moz-placeholder { color:#a9a9a9; }
-
 #wrapper{
   right: 0;
   top: 0;
@@ -37,7 +12,8 @@ textarea:-moz-placeholder { color:#a9a9a9; }
   margin: 0 auto;
   position: relative;
 }
-#leftCent{
+
+#left-cent{
   top: 0;
   left: 0;
   width: 744px;
@@ -45,7 +21,8 @@ textarea:-moz-placeholder { color:#a9a9a9; }
   background: #FFFFFF;
   position: absolute;
 }
-#rightCent{
+
+#right-cent{
   top: 0;
   right: 0;
   width: 602px;
@@ -53,14 +30,201 @@ textarea:-moz-placeholder { color:#a9a9a9; }
   background: #FFFFFF;
   position: absolute;
 }
-.white-popup {
-  position: relative;
-  background: #FFF;
-  padding: 20px;
-  width: auto;
-  max-width: 500px;
-  margin: 20px auto;
+
+
+#left-cent,#right-cent{
+  .topbar{
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    border-bottom: 2px dashed #E6E6E6;
+    position: absolute;
+  }
+
+  .toolbar{
+    right: 0;
+    left: 0;
+    bottom: 0;
+    height: 50px;
+    position: absolute;
+    border-top: 1px solid #D9D9D9;
+  }
+  .title{
+    display: inline-block;
+    font-size: 18px;
+    color: #999999;
+    margin: 14px 0 0 30px;
+    padding: 2px;
+    position: relative;
+  }
+  .title:after{
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: -6px;
+    right: 0;
+    left: 0;
+    border-bottom: 1px solid #999999;
+  }
+  .separated{
+    width: 1px;
+    height: 22px;
+    background: #F0f0f0;
+    margin: 14px 10px 12px 10px;
+    float: left;
+  }
+  .tool-btn{
+    cursor: pointer;
+    float: left;
+    font-size: 14px;
+    height: 24px;
+    line-height: 24px;
+    color: #999999;
+    padding-left: 30px;
+    margin: 14px 10px 10px 10px;
+  }
+  .tool-btn:before{
+    content: '';
+    width: 30px;
+    height: 26px;
+    display: block;
+    position: absolute;
+  }
+  .task-ctl-btn{
+    margin-left: 40px;
+    padding-left: 40px;
+  }
+  .task-ctl-btn:before{
+    margin-left: -40px;
+    background: url("../images/icon2.png") no-repeat 0px 0px;
+  }
+  .add-error-btn{
+    margin-left: 10px;
+    padding-left: 30px;
+  }
+  .add-error-btn:before{
+    margin-left: -40px;
+    background: url("../images/+.png") no-repeat 20px 8px;
+  }
+  .play-video-btn{
+    margin-left: 10px;
+    padding-left: 30px;
+  }
+  .play-video-btn:before{
+    margin-left: -30px;
+    background: url("../images/icon2.png") no-repeat -237px 0px;
+  }
+  .play-sound-btn{
+    margin-left: 10px;
+    padding-left: 20px;
+  }
+  .play-sound-btn:before{
+    margin-left: -30px;
+    background: url("../images/icon2.png") no-repeat -237px 0px;
+  }
+  .more-plen{
+    margin-left: 10px;
+    padding-left: 30px;
+  }
+  .more-plen:before{
+    margin-left: -30px;
+    background: url("../images/icon2.png") no-repeat -450px 0px;
+  }
+  .prev-btn:before{
+    width: 20px;
+    background: url('../images/prev.png') no-repeat 4px 2px;
+  }
+  .next-btn:before{
+    width: 20px;
+    background: url('../images/next.png') no-repeat 4px 2px;
+  }
+  .prev-btn,.next-btn{
+    padding-left: 0;
+    width: 20px;
+  }
+  .tool-num{
+    width: 50px;
+    cursor: pointer;
+    float: left;
+    height: 28px;
+    line-height: 28px;
+    color: #747474;
+    text-align: center;
+    margin: 12px 0 8px 0;
+    font-size: 24px;
+  }
+  .sound-btn{
+    padding-left: 0;
+    width: 24px;
+    margin-left: 20px;
+  }
+  .sound-btn:before{
+    background: url('../images/icons.png') no-repeat -114px -2px;
+  }
+  .answer-btn{
+    position: relative;
+    padding-left: 20px;
+    .checkbox{
+      position: absolute;
+      top: 6px;
+      left: 0;
+    }
+  }
+  .answer-btn:before{
+    content: normal;
+  }
+  .eraser-btn{
+    margin-left: 10px;
+    padding-left: 0;
+    width: 30px;
+  }
+  .eraser-btn:before{
+    background: url('../images/eraser.png') no-repeat center center;
+  }
+  .pen-red-btn{
+    width: 26px;
+    padding-left: 0;
+  }
+  .pen-red-btn:before{
+    background: #FF0000;
+    width: 26px;
+  }
+  .pen-black-btn{
+    width: 26px;
+    padding-left: 0;
+  }
+  .pen-black-btn:before{
+    background: #000000;
+    width: 26px;
+  }
+  .add-page-btn{
+    margin-left: 10px;
+    padding-left: 30px;
+  }
+  .add-page-btn:before{
+    margin-left: -40px;
+    background: url("../images/+.png") no-repeat 20px 8px;
+  }
 }
+
+#left-cent{
+  .run-time{
+    margin-left: 220px;
+    display: inline-block;
+    font-size: 16px;
+    color: #999999;
+  }
+  .close-class{
+    float: right;
+    margin: 14px 30px 0px 0;
+  }
+}
+
+
+
+
+
 
 /* Media queries
 -------------------------------------------------------------------------------*/
