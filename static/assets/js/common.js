@@ -27,6 +27,8 @@ requirejs.config({
 
         WSY: 'js/apps/util/wsy/core',
         wsy: 'js/apps/util/wsy',
+        DetectRTC: 'js/apps/util/DetectRTC',
+        RTCPeerConnection: 'js/apps/util/RTCPeerConnection-v1.5',
         loadImageAll: 'js/apps/util/load-image-all'
     },
     shim: {
@@ -55,6 +57,12 @@ requirejs.config({
         },
         dust: {
             exports: 'dust'
+        },
+        RTCPeerConnection: {
+            exports: '-'
+        },
+        DetectRTC: {
+            exports: '-'
         }
     }
 });

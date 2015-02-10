@@ -5,6 +5,8 @@ define([
     'jquery',
     'lodashJs',
     'umeditorHf',
+    'DetectRTC',
+    'RTCPeerConnection',
     'dust-temp/taskView',
     'wsy/get_offset_point',
     'wsy/hf_canvas_board',
@@ -24,7 +26,9 @@ define([
         cache = {},
         jspScrollList = {},
         timerList = {},
-        lockCtl = {};
+        lockCtl = {},
+        localMedia,
+        sendMedia;
 
 
     function initElement(callBack){
@@ -59,6 +63,13 @@ define([
         $cache.taskCtlBtn = $cache.leftCentToolBar.find('.task-ctl-btn');
         $cache.taskName = $cache.taskBoxCent.find('.task-name');
         $cache.taskClose = $cache.taskBoxCent.find('.task-close');
+
+        $cache.popList = $('#pop-list');
+        $cache.testMediaPop = $cache.popList.find('.test-media-pop');
+        $cache.mediaTest = $cache.testMediaPop.find('.media-test');
+        $cache.mediaTestSuccessBtn = $cache.testMediaPop.find('.media-test-success-btn');
+        $cache.mediaTestErrorBtn = $cache.testMediaPop.find('.media-test-error-btn');
+
         if(callBack){
             callBack();
         }
@@ -417,7 +428,60 @@ define([
         );
     }
 
-    initElement(function(){
+    function mediaTest(){
+        DetectRTC.load(function(){
+            initElement(function(){
+                $cache.mediaTestSuccessBtn.click('click', function(e){
+                    initApp();
+                    $.magnificPopup.close();
+                });
+                $cache.mediaTestErrorBtn.click('click', function(e){
+                    $cache.mediaTestSuccessBtn.hide();
+                    swal('请调整设备, 或联系老师!', '', 'warning');
+                });
+                $.magnificPopup.open({
+                    items: {
+                        src: $cache.testMediaPop
+                    },
+                    type: 'inline',
+                    modal: true
+                });
+            });
+
+            if(!DetectRTC.browser.isChrome){
+                swal('对不起,浏览器版本不兼容!', '请使用Google Chrome浏览器!', 'error');
+                $cache.mediaTestSuccessBtn.hide();
+                return false;
+            }
+            if(!DetectRTC.isWebRTCSupported){
+                swal('您的浏览器无法支持WebRTC!', '', 'error');
+                $cache.mediaTestSuccessBtn.hide();
+                return false;
+            }
+            if(!DetectRTC.hasWebcam){
+                swal('无法检测到您的摄像头!', '', 'error');
+                $cache.mediaTestSuccessBtn.hide();
+                return false;
+            }
+            if(!DetectRTC.hasMicrophone){
+                swal('无法检测到您的麦克风!', '', 'error');
+                $cache.mediaTestSuccessBtn.hide();
+                return false;
+            }
+            getUserMedia({
+                onsuccess: function(media){
+                    localMedia = media;
+                    sendMedia = media.clone();
+                    $cache.mediaTest.attr('src', window.URL.createObjectURL(sendMedia));
+
+                    window.localMedia = localMedia;
+                    window.sendMedia = sendMedia;
+                }
+            });
+        });
+    }
+
+    function initApp(){
         initScrollPane(function(){
             initCtlBtn(function(){
                 initUMEditor(function(){
@@ -428,7 +492,10 @@ define([
                 });
             });
         });
-    });
+    }
+
+    mediaTest();
+
 
     // object to global debug
     window.jspScrollList = jspScrollList;

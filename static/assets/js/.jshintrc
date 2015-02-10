@@ -82,6 +82,9 @@
     "swal": true,
     "loadImage": true,
     "WSY": true,
-    "dust": true
+    "dust": true,
+    "DetectRTC": true,
+    "location": true,
+    "getUserMedia": true
   }
 }
