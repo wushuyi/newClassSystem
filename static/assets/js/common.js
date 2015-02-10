@@ -7,8 +7,8 @@ requirejs.config({
     paths: {
         apps: 'js/apps',
         base64: 'libs/base64/0.3.0/base64',
-        dustjsHelpers: 'libs/1.5.0/dust-helpers',
-        dustjsLinkedin: 'libs/2.5.1/dust-full',
+        dustHelpers: 'libs/dustjs-helpers/1.5.0/dust-helpers',
+        dust: 'libs/dustjs-linkedin/2.5.1/dust-full',
 
         jquery: 'libs/jquery/1.11.2/jquery',
         jqueryRaty: 'libs/jquery.raty/2.7.0/jquery.raty',
@@ -23,7 +23,11 @@ requirejs.config({
         socketIo: 'libs/socket.io/1.3.2/socket.io',
         sweetalert: 'libs/sweetalert/0.4.1/sweet-alert',
         umeditorHf: 'libs/umeditor-hf/1.2.2/umeditor',
-        umeditorHfConfig: 'libs/umeditor-hf/1.2.2/umeditor.config'
+        umeditorHfConfig: 'libs/umeditor-hf/1.2.2/umeditor.config',
+
+        WSY: 'js/apps/util/wsy/core',
+        wsy: 'js/apps/util/wsy',
+        loadImageAll: 'js/apps/util/load-image-all'
     },
     shim: {
         modernizr: {
@@ -44,6 +48,13 @@ requirejs.config({
         },
         sweetalert: {
             exports: '-'
+        },
+        loadImageAll: {
+            exports: '-',
+            deps: ['jquery']
+        },
+        dust: {
+            exports: 'dust'
         }
     }
 });

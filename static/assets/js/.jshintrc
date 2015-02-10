@@ -79,6 +79,9 @@
     "requirejs": true,
     "require": true,
     "console": true,
-    "swal": true
+    "swal": true,
+    "loadImage": true,
+    "WSY": true,
+    "dust": true
   }
 }

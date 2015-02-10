@@ -1,0 +1,1 @@
+dust-compiler.cmd -s ..\dustsrc -d .\ --bootstrap --amd
