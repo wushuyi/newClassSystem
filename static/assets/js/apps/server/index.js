@@ -36,6 +36,7 @@ define([
         $cache.leftCent = $('#left-cent');
         $cache.rightCent = $('#right-cent');
         $cache.taskBoxCent = $('#task-box-cent');
+        $cache.answerLock = $('#answer-lock');
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
 
         $cache.leftCentTopBar = $cache.leftCent.find('.topbar');
@@ -125,6 +126,12 @@ define([
         $cache.taskClose.on('click', function(){
             $cache.taskBoxCent.hide();
             lockCtl.taskBox = false;
+        });
+        $cache.answerLock.on('change', function (e) {
+            var checked = $cache.answerLock.get(0).checked;
+            if (checked) {
+                $cache.answerBtn.trigger('answerLock');
+            }
         });
 
         if(callBack){
@@ -433,6 +440,7 @@ define([
             initElement(function(){
                 $cache.mediaTestSuccessBtn.click('click', function(e){
                     initApp();
+                    $cache.mediaTest.attr('src', '');
                     $.magnificPopup.close();
                 });
                 $cache.mediaTestErrorBtn.click('click', function(e){
