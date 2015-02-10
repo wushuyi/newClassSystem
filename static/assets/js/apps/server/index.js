@@ -496,7 +496,6 @@ define([
 
     mediaTest();
 
-
     // object to global debug
     window.jspScrollList = jspScrollList;
     window.$cache = $cache;
