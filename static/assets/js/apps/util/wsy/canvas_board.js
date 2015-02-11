@@ -306,7 +306,7 @@ define([
             ctx[key] = value;
         };
 
-        proto.resize = function(options){
+        proto.resizeAndSave = function(options){
             if(!options || typeof options !== 'object'){
                 throw 'error options';
             }
@@ -314,7 +314,7 @@ define([
             var canvas = self._canvas.canvas;
             var ctx = self._canvas.context;
 
-            var saveCanvas = canvas.toDataURL();
+            var saveCanvas = self.getBase64Img();
             self.saveStyle.call(self);
             if(options.width){
                 canvas.width = options.width;
@@ -331,6 +331,96 @@ define([
             img.src = saveCanvas;
         };
 
+        proto.resizeAndClear = function(options){
+            if(!options || typeof options !== 'object'){
+                throw 'error options';
+            }
+            var self = this;
+            var canvas = self._canvas.canvas;
+            self.saveStyle.call(self);
+            if(options.width){
+                canvas.width = options.width;
+            }
+            if(options.height){
+                canvas.height = options.height;
+            }
+            self.restoreStyle.call(self);
+        };
+
+        proto.setBgImg = function(options){
+            if(!options || typeof options !== 'object'){
+                throw 'error options';
+            }
+            if(!options.image){
+                throw 'must be options: image';
+            }
+            var self = this;
+            var canvas = self._canvas.canvas;
+            var ctx = self._canvas.context;
+            var setCanvasSize = {};
+
+            var img = new Image();
+            img.onload = function(){
+                self.saveStyle.call(self);
+
+                if(options.width){
+                    setCanvasSize.width = options.width;
+                }
+                if(options.height){
+                    setCanvasSize.height = options.height;
+                }
+                if(options.addWidth){
+                    setCanvasSize.width = img.width + options.addWidth;
+                }
+                if(options.addHeight){
+                    setCanvasSize.height = img.height + options.addHeight;
+                }
+                if(!setCanvasSize.width){
+                    setCanvasSize.width = img.width;
+                }
+                if(!setCanvasSize.height){
+                    setCanvasSize.height = img.height;
+                }
+
+                canvas.width = setCanvasSize.width;
+                canvas.height = setCanvasSize.height;
+
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                img = null;
+                self.restoreStyle.call(self);
+            };
+            img.src = options.image;
+        };
+
+        proto.addPartitionPage = function(options){
+            if(!options || typeof options !== 'object'){
+                throw 'error options';
+            }
+            if(!options.addHeight){
+                options.addHeight = 1001;
+            }else{
+                options.addHeight += 1;
+            }
+            var self = this;
+            var canvas = self._canvas.canvas;
+            var ctx = self._canvas.context;
+            var oldCanvasSize = {
+                width: canvas.width,
+                height: canvas.height
+            };
+            self.resizeAndSave({
+                width: canvas.width,
+                height: canvas.height + options.addHeight
+            });
+            self.saveStyle.call(self);
+            ctx.strokeStyle = '#D9D9D9';
+            ctx.moveTo(0, oldCanvasSize.height + 1);
+            ctx.lineTo(oldCanvasSize.width, oldCanvasSize.height + 1);
+            ctx.stroke();
+            self.restoreStyle.call(self);
+        };
+
         proto.isRemoteDraw = function(){
             var self = this;
             return self._env.remote.moveLock;
@@ -339,6 +429,13 @@ define([
         proto.getCanvas = function(){
             var self = this;
             return self._canvas.canvas;
+        };
+
+        proto.getBase64Img = function(){
+            var self = this;
+            var canvas = self._canvas.canvas;
+            var base64Img = canvas.toDataURL();
+            return base64Img;
         };
     }
 );

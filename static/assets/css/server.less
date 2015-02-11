@@ -255,7 +255,43 @@
       background: url("../images/+.png") no-repeat 20px 8px;
     }
   }
-
+  .session-cent{
+    position: absolute;
+    width: 429px;
+    height: 270px;
+    bottom: 68px;
+    right: 36px;
+    background: #FFFFFF;
+    border: 1px solid #D9D9D9;
+    display: none;
+    box-shadow: #D9D9D9 0px 0px 6px;
+    &:before{
+      content: "";
+      display: block;
+      width: 0;
+      height: 0;
+      position: absolute;
+      bottom: -10px;
+      right: 20px;
+      border-top: 10px solid #D9D9D9;
+      border-right: 16px solid transparent;
+      border-left: 16px solid transparent;
+      z-index: 2;
+    }
+    &:after{
+      content: "";
+      display: block;
+      width: 0;
+      height: 0;
+      position: absolute;
+      bottom: -8px;
+      right: 20px;
+      border-top: 10px solid #FFFFFF;
+      border-right: 16px solid transparent;
+      border-left: 16px solid transparent;
+      z-index: 2;
+    }
+  }
 }
 
 #left-cent{

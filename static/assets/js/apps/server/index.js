@@ -36,11 +36,16 @@ define([
         $cache.leftCent = $('#left-cent');
         $cache.rightCent = $('#right-cent');
         $cache.taskBoxCent = $('#task-box-cent');
-        $cache.answerLock = $('#answer-lock');
+
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
+        $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
+        $cache.rightSessionCent = $cache.rightCent.find('.session-cent');
+
+        $cache.answerLock = $('#answer-lock');
 
         $cache.leftCentTopBar = $cache.leftCent.find('.topbar');
         $cache.leftCentToolBar = $cache.leftCent.find('.toolbar');
+        $cache.rightCentTopBar= $cache.rightCent.find('.topbar');
         $cache.rightCentToolBar = $cache.rightCent.find('.toolbar');
 
         $cache.planCent = $cache.leftCent.find('.plan-cent');
@@ -51,14 +56,24 @@ define([
         $cache.playSoundBtn = $cache.leftCentToolBar.find('.play-sound-btn');
         $cache.morePlanBtn = $cache.leftCentToolBar.find('.more-plan-btn');
 
+        $cache.leftPrevBtn =  $cache.leftCentToolBar.find('.prev-btn');
+        $cache.leftToolNum = $cache.leftCentToolBar.find('.tool-num');
+        $cache.leftNextBtn = $cache.leftCentToolBar.find('.next-btn');
+
         $cache.sketchpadCent = $cache.rightCent.find('.sketchpad-cent');
         $cache.sketchpadScroll = $cache.sketchpadCent.find('.scroll');
+
         $cache.soundBtn = $cache.rightCentToolBar.find('.sound-btn');
         $cache.answerBtn = $cache.rightCentToolBar.find('.answer-btn');
         $cache.eraserBtn = $cache.rightCentToolBar.find('.eraser-btn');
         $cache.penRedBtn = $cache.rightCentToolBar.find('.pen-red-btn');
         $cache.penBlackBtn = $cache.rightCentToolBar.find('.pen-black-btn');
         $cache.addPageBtn = $cache.rightCentToolBar.find('.add-page-btn');
+
+        $cache.rightPrevBtn = $cache.rightCentToolBar.find('.prev-btn');
+        $cache.rightToolNum = $cache.rightCentToolBar.find('.tool-num');
+        $cache.rightNextBtn = $cache.rightCentToolBar.find('.next-btn');
+
 
         $cache.taskScroll = $cache.taskCent.find('.scroll');
         $cache.taskCtlBtn = $cache.leftCentToolBar.find('.task-ctl-btn');
@@ -113,6 +128,15 @@ define([
     }
 
     function initCtlBtn(callBack){
+        var notSelect;
+        notSelect = function(e){
+            e.preventDefault();
+        };
+        $cache.leftCentTopBar.on('selectstart',notSelect);
+        $cache.leftCentToolBar.on('selectstart',notSelect);
+        $cache.rightCentTopBar.on('selectstart',notSelect);
+        $cache.rightCentToolBar.on('selectstart',notSelect);
+
         $cache.taskCtlBtn.on('click', function(e){
             if(!lockCtl.taskBox){
                 $cache.taskBoxCent.show();
@@ -127,10 +151,28 @@ define([
             $cache.taskBoxCent.hide();
             lockCtl.taskBox = false;
         });
-        $cache.answerLock.on('change', function (e) {
+        $cache.answerLock.on('change', function(e) {
             var checked = $cache.answerLock.get(0).checked;
             if (checked) {
                 $cache.answerBtn.trigger('answerLock');
+            }
+        });
+        $cache.leftToolNum.on('click', function(e){
+            if(lockCtl.leftSessionCent){
+                $cache.leftSessionCent.hide();
+                lockCtl.leftSessionCent = false;
+            }else{
+                $cache.leftSessionCent.show();
+                lockCtl.leftSessionCent = true;
+            }
+        });
+        $cache.rightToolNum.on('click', function(e){
+            if(lockCtl.rightSessionCent){
+                $cache.rightSessionCent.hide();
+                lockCtl.rightSessionCent = false;
+            }else{
+                $cache.rightSessionCent.show();
+                lockCtl.rightSessionCent = true;
             }
         });
 
@@ -367,9 +409,9 @@ define([
             $cache.sketchpadBg = $(canvas);
             canvas.className = 'sketchpad-img';
 
-            Board = new WSY.CanvasBoard({
+            Board = new WSY.hfCanvasBoard({
                 width: canvas.width,
-                height: canvas.height + 1000});
+                height: canvas.height});
 
             cache.Board = Board;
 
