@@ -51,6 +51,12 @@ define([
         $cache.planCent = $cache.leftCent.find('.plan-cent');
         $cache.planScroll = $cache.planCent.find('.scroll');
 
+        $cache.closeClassBtn = $cache.leftCentTopBar.find('.close-class-btn');
+        $cache.runTimeNum = $cache.leftCentToolBar.find('.run-time .num');
+        $cache.leftTitleNum = $cache.leftCentToolBar.find('.title .num');
+
+        $cache.rightTitleNum = $cache.rightCentToolBar.find('.title .num');
+
         $cache.addErrorBtn = $cache.leftCentToolBar.find('.add-error-btn');
         $cache.playVideoBtn = $cache.leftCentToolBar.find('.play-video-btn');
         $cache.playSoundBtn = $cache.leftCentToolBar.find('.play-sound-btn');
@@ -85,6 +91,17 @@ define([
         $cache.mediaTest = $cache.testMediaPop.find('.media-test');
         $cache.mediaTestSuccessBtn = $cache.testMediaPop.find('.media-test-success-btn');
         $cache.mediaTestErrorBtn = $cache.testMediaPop.find('.media-test-error-btn');
+        $cache.sureClosePop = $cache.popList.find('.sure-close-pop');
+        $cache.sureCloseFalseBtn = $cache.sureClosePop.find('.sure-close-false-btn');
+        $cache.sureCloseTrueBtn = $cache.sureClosePop.find('.sure-close-true-btn');
+        $cache.ratyPop = $cache.popList.find('.raty-pop');
+        $cache.ratyPopScroll = $cache.ratyPop.find('.pop-box-mid');
+        $cache.ratyConfirmBtn = $cache.ratyPop.find('.raty-confirm-btn');
+
+        $cache.remarkPop = $cache.popList.find('.remark-pop');
+        $cache.remarkPrevBtn = $cache.remarkPop.find('.remark-prev-btn');
+        $cache.remarkConfirmBtn = $cache.remarkPop.find('.remark-confirm-btn');
+
 
         if(callBack){
             callBack();
@@ -122,6 +139,9 @@ define([
         jspScrollList.taskFn = $cache.taskCent.jScrollPane({
             hideFocus: true
         }).data('jsp');
+        jspScrollList.ratyFn = $cache.ratyPopScroll.jScrollPane({
+            hideFocus: true
+        }).data('jsp');
         if(callBack){
             callBack();
         }
@@ -136,6 +156,64 @@ define([
         $cache.leftCentToolBar.on('selectstart',notSelect);
         $cache.rightCentTopBar.on('selectstart',notSelect);
         $cache.rightCentToolBar.on('selectstart',notSelect);
+
+        $cache.closeClassBtn.on('click', function(e){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.sureClosePop
+                },
+                type: 'inline',
+                modal: true
+            });
+        });
+
+        /* async el find */
+        $cache.ratyPopScroll.find('.raty').raty({
+            numberMax: 3,
+            path: 'assets/images/',
+            starOff: 'off.png',
+            starOn: 'on.png',
+            hints: ['合格', '良好', '优良']
+        });
+
+
+        $cache.sureCloseFalseBtn.on('click', function(e){
+            $.magnificPopup.close();
+        });
+        $cache.sureCloseTrueBtn.on('click', function(e){
+            $.magnificPopup.close();
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.ratyPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            jspScrollList.ratyFn.reinitialise();
+        });
+        $cache.ratyConfirmBtn.on('click', function(e){
+            $.magnificPopup.close();
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.remarkPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        });
+        $cache.remarkPrevBtn.on('click', function(e){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.ratyPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        });
+        $cache.remarkConfirmBtn.on('click', function(e){
+            $.magnificPopup.close();
+            swal('提交成功!', '', 'success');
+        });
 
         $cache.taskCtlBtn.on('click', function(e){
             if(!lockCtl.taskBox){
@@ -544,7 +622,10 @@ define([
         });
     }
 
-    mediaTest();
+    initElement(function(){
+        initApp();
+
+    });
 
     // object to global debug
     window.jspScrollList = jspScrollList;

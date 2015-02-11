@@ -23,6 +23,7 @@ mark {background-color: #fcd700; color: #000; font-style: italic; font-weight: b
 input:-moz-placeholder { color:#a9a9a9; }
 textarea:-moz-placeholder { color:#a9a9a9; }
 
+html {overflow-y: hidden;}
 
 /*
  *   bs2-btn
