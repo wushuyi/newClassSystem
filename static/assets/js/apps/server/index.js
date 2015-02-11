@@ -28,6 +28,7 @@ define([
         timerList = {},
         lockCtl = {},
         localMedia,
+        webMedia,
         sendMedia;
 
 
@@ -97,11 +98,15 @@ define([
         $cache.ratyPop = $cache.popList.find('.raty-pop');
         $cache.ratyPopScroll = $cache.ratyPop.find('.pop-box-mid');
         $cache.ratyConfirmBtn = $cache.ratyPop.find('.raty-confirm-btn');
-
         $cache.remarkPop = $cache.popList.find('.remark-pop');
         $cache.remarkPrevBtn = $cache.remarkPop.find('.remark-prev-btn');
         $cache.remarkConfirmBtn = $cache.remarkPop.find('.remark-confirm-btn');
-
+        $cache.photoPop = $cache.popList.find('.photo-pop');
+        $cache.photoBox = $cache.photoPop.find('.photo-box');
+        $cache.photoResetBtn = $cache.photoPop.find('.photo-reset-btn');
+        $cache.photoUploadBtn = $cache.photoPop.find('.photo-upload-btn');
+        $cache.photoConfirmBtn = $cache.photoPop.find('.photo-confirm-btn');
+        $cache.photoCancelBtn = $cache.photoPop.find('.photo-cancel-btn');
 
         if(callBack){
             callBack();
@@ -148,14 +153,16 @@ define([
     }
 
     function initCtlBtn(callBack){
-        var notSelect;
-        notSelect = function(e){
+        var preventDefault;
+        preventDefault = function(e){
             e.preventDefault();
         };
-        $cache.leftCentTopBar.on('selectstart',notSelect);
-        $cache.leftCentToolBar.on('selectstart',notSelect);
-        $cache.rightCentTopBar.on('selectstart',notSelect);
-        $cache.rightCentToolBar.on('selectstart',notSelect);
+        $cache.leftCentTopBar.on('selectstart',preventDefault);
+        $cache.leftCentToolBar.on('selectstart',preventDefault);
+        $cache.rightCentTopBar.on('selectstart',preventDefault);
+        $cache.rightCentToolBar.on('selectstart',preventDefault);
+
+        $cache.photoBox.on('contextmenu', preventDefault);
 
         $cache.closeClassBtn.on('click', function(e){
             $.magnificPopup.open({
@@ -213,6 +220,10 @@ define([
         $cache.remarkConfirmBtn.on('click', function(e){
             $.magnificPopup.close();
             swal('提交成功!', '', 'success');
+        });
+        $cache.photoCancelBtn.on('click', function(e){
+            $.magnificPopup.close();
+            $cache.photoBox.attr('src', '');
         });
 
         $cache.taskCtlBtn.on('click', function(e){
@@ -337,6 +348,16 @@ define([
         };
         $cache.taskSumBtn.on('click', function(e){
             onSendMsg();
+        });
+        $cache.taskWebcamBtn.on('click', function(e){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.photoPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            $cache.photoBox.attr('src', cache.webMediaUrl);
         });
     }
 
@@ -558,6 +579,9 @@ define([
     function mediaTest(){
         DetectRTC.load(function(){
             initElement(function(){
+                $cache.mediaTest.on('contextmenu', function(e){
+                    e.preventDefault();
+                });
                 $cache.mediaTestSuccessBtn.click('click', function(e){
                     initApp();
                     $cache.mediaTest.attr('src', '');
@@ -600,10 +624,13 @@ define([
                 onsuccess: function(media){
                     localMedia = media;
                     sendMedia = media.clone();
-                    $cache.mediaTest.attr('src', window.URL.createObjectURL(sendMedia));
+                    webMedia = media.clone();
+                    cache.webMediaUrl = URL.createObjectURL(webMedia);
+                    $cache.mediaTest.attr('src', cache.webMediaUrl);
 
                     window.localMedia = localMedia;
                     window.sendMedia = sendMedia;
+
                 }
             });
         });
@@ -622,10 +649,11 @@ define([
         });
     }
 
-    initElement(function(){
-        initApp();
-
-    });
+    //initElement(function(){
+    //    initApp();
+    //
+    //});
+    mediaTest();
 
     // object to global debug
     window.jspScrollList = jspScrollList;

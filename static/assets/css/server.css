@@ -195,13 +195,11 @@
 }
 #left-cent .prev-btn:before,
 #right-cent .prev-btn:before {
-  width: 20px;
-  background: url('../images/prev.png') no-repeat 4px 2px;
+  content: normal;
 }
 #left-cent .next-btn:before,
 #right-cent .next-btn:before {
-  width: 20px;
-  background: url('../images/next.png') no-repeat 4px 2px;
+  content: normal;
 }
 #left-cent .prev-btn,
 #right-cent .prev-btn,
@@ -729,6 +727,23 @@
 .remark-pop .remark-confirm-btn {
   margin-top: 18px;
   margin-right: 50px;
+}
+.photo-pop {
+  max-width: 540px;
+}
+.photo-pop .photo-box {
+  width: 500px;
+  height: 400px;
+}
+.photo-pop .photo-upload-btn {
+  display: none;
+  margin-right: 20px;
+}
+.photo-pop .photo-reset-btn {
+  display: none;
+}
+.photo-pop .photo-confirm-btn {
+  margin-right: 20px;
 }
 /* Media queries
 -------------------------------------------------------------------------------*/

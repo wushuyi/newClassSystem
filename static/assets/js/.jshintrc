@@ -85,6 +85,7 @@
     "dust": true,
     "DetectRTC": true,
     "location": true,
-    "getUserMedia": true
+    "getUserMedia": true,
+    "URL": true
   }
 }
