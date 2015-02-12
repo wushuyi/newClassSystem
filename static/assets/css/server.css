@@ -745,6 +745,19 @@
 .photo-pop .photo-confirm-btn {
   margin-right: 20px;
 }
+.upimg-pop {
+  max-width: 640px;
+  min-width: 240px;
+}
+.upimg-pop .view-box {
+  position: relative;
+}
+.upimg-pop canvas {
+  border: 1px dashed #0087F7;
+}
+.upimg-pop .upimg-upload-btn {
+  margin-right: 20px;
+}
 /* Media queries
 -------------------------------------------------------------------------------*/
 /* Print styles

@@ -6,6 +6,7 @@ define([
     'lodashJs',
     'umeditorHf',
     'WSY',
+    'apps/util/canvas-to-blob',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
@@ -21,7 +22,8 @@ define([
     $,
     _,
     UM,
-    WSY
+    WSY,
+    dataURLtoBlob
 ){
     'use strict';
 
@@ -110,6 +112,10 @@ define([
         $cache.photoUploadBtn = $cache.photoPop.find('.photo-upload-btn');
         $cache.photoConfirmBtn = $cache.photoPop.find('.photo-confirm-btn');
         $cache.photoCancelBtn = $cache.photoPop.find('.photo-cancel-btn');
+        $cache.upimgPop = $cache.popList.find('.upimg-pop');
+        $cache.upimgViewBox = $cache.upimgPop.find('.view-box');
+        $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
+        $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
 
         if(callBack){
             callBack();
@@ -157,6 +163,9 @@ define([
 
     function initCtlBtn(callBack){
         var preventDefault;
+        // 阻止默认事件 start
+
+        // 阻止文字选择
         preventDefault = function(e){
             e.preventDefault();
         };
@@ -165,8 +174,11 @@ define([
         $cache.rightCentTopBar.on('selectstart',preventDefault);
         $cache.rightCentToolBar.on('selectstart',preventDefault);
 
+        // 阻止右键菜单
         $cache.photoBox.on('contextmenu', preventDefault);
+        // 阻止默认事件 end
 
+        // 结束课程 start
         $cache.closeClassBtn.on('click', function(e){
             $.magnificPopup.open({
                 items: {
@@ -177,7 +189,7 @@ define([
             });
         });
 
-        /* async el find */
+        // 需要异步查找
         $cache.ratyPopScroll.find('.raty').raty({
             numberMax: 3,
             path: 'assets/images/',
@@ -185,7 +197,6 @@ define([
             starOn: 'on.png',
             hints: ['合格', '良好', '优良']
         });
-
 
         $cache.sureCloseFalseBtn.on('click', function(e){
             $.magnificPopup.close();
@@ -222,11 +233,14 @@ define([
                 modal: true
             });
         });
+
         $cache.remarkConfirmBtn.on('click', function(e){
             $.magnificPopup.close();
             swal('提交成功!', '', 'success');
         });
+        // 结束课程 end
 
+        // 获取摄像头图片上传 start
         $cache.photoCancelBtn.on('click', function(e){
             $.magnificPopup.close();
             $cache.photoBox.attr('src', '');
@@ -264,7 +278,25 @@ define([
             $cache.photoResetBtn.hide();
             $cache.photoUploadBtn.hide();
         });
+        // 获取摄像头图片上传 end
 
+        // 上传本地图片 start
+        $cache.upimgUploadBtn.on('click', function(e){
+            var canvas;
+            canvas = $cache.upimgViewBox.find('canvas').get(0);
+            canvas.toBlob(function(blob){
+               //console.log(blob);
+                // wait add code...
+                $.magnificPopup.close();
+            });
+        });
+        $cache.upimgCancelBtn.on('click', function(e){
+            $.magnificPopup.close();
+        });
+        // 上传本地图片 end
+
+
+        // 聊天框 start
         $cache.taskCtlBtn.on('click', function(e){
             if(!lockCtl.taskBox){
                 $cache.taskBoxCent.show();
@@ -279,11 +311,22 @@ define([
             $cache.taskBoxCent.hide();
             lockCtl.taskBox = false;
         });
+        // 聊天框 end
+
+        // 控制按钮 start
         $cache.answerLock.on('change', function(e) {
             var checked = $cache.answerLock.get(0).checked;
             if (checked) {
                 $cache.answerBtn.trigger('answerLock');
             }
+        });
+        $cache.addPageBtn.on('click', function(e){
+            var myBoard, canvasEl;
+            myBoard = cache.Board;
+            myBoard.addPartitionPage({});
+            canvasEl = myBoard.getCanvas();
+            $cache.sketchpadScroll.height(canvasEl.height);
+            jspScrollList.sketchpadFn.reinitialise();
         });
         $cache.leftToolNum.on('click', function(e){
             if(lockCtl.leftSessionCent){
@@ -303,6 +346,7 @@ define([
                 lockCtl.rightSessionCent = true;
             }
         });
+        // 控制按钮 end
 
         if(callBack){
             callBack();
@@ -396,8 +440,6 @@ define([
                         }
                     };
                 });
-
-
             });
         };
         $cache.taskSumBtn.on('click', function(e){
@@ -413,6 +455,36 @@ define([
             });
             $cache.photoBox.attr('src', cache.webMediaUrl);
         });
+        $cache.taskUploadBtn.find('input[type="file"]').on('change', function(e){
+            var $self,file, blobUrl;
+            $self = $(this);
+            file = e.target.files[0];
+            $self.val('');
+            if(file.type.indexOf('image') === -1){
+                swal('对不起,不支持该文件类型!', '', 'warning');
+                return false;
+            }
+            blobUrl = window.URL.createObjectURL(file);
+            loadImage(
+                blobUrl,
+                function(canvas){
+                    $cache.upimgViewBox.html(canvas);
+                    $cache.upimgPop.width(canvas.width + 40);
+                    $.magnificPopup.open({
+                        items:{
+                            src: $cache.upimgPop
+                        },
+                        type: 'inline',
+                        modal: true
+                    });
+                },
+                {
+                    maxWidth: 600,
+                    maxHeight: 600,
+                    canvas: true
+                }
+            );
+        });
     }
 
     function initUMEditor(callBack){
@@ -426,7 +498,8 @@ define([
 
             $cache.taskSumBtn = $('<div class="task-sum-btn">发送</div>');
             $cache.taskWebcamBtn = $('<div class="task-webcam-btn"></div>');
-            $cache.taskUploadBtn = $('<div class="task-upload-btn"><input type="file" name="upload"></div>');
+            $cache.taskUploadBtn = $('<div class="task-upload-btn"><input type="file" name="upload" ' +
+            'accept=".gif,.jpeg,.jpg,.png,wbmp,.bmp,.svg,.svgz,.webp"></div>');
 
             $cache.umTool.append($cache.taskSumBtn);
             $cache.umTool.append($cache.taskWebcamBtn);
@@ -715,4 +788,6 @@ define([
     window.cache = cache;
 
     window.initSketchpadBox = initSketchpadBox;
+
+    window.dataURLtoBlob = dataURLtoBlob;
 });
