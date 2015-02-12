@@ -64,6 +64,8 @@ define([
         $cache.mediaTest = $cache.testMediaPop.find('.media-test');
         $cache.mediaTestSuccessBtn = $cache.testMediaPop.find('.media-test-success-btn');
         $cache.mediaTestErrorBtn = $cache.testMediaPop.find('.media-test-error-btn');
+        $cache.remarkPop = $cache.popList.find('.remark-pop');
+        $cache.remarkConfirmBtn = $cache.remarkPop.find('.remark-confirm-btn');
         $cache.photoPop = $cache.popList.find('.photo-pop');
         $cache.photoBox = $cache.photoPop.find('.photo-box');
         $cache.photoResetBtn = $cache.photoPop.find('.photo-reset-btn');
@@ -125,6 +127,13 @@ define([
         // 阻止右键菜单
         $cache.photoBox.on('contextmenu', preventDefault);
         // 阻止默认事件 end
+
+        // 结束课程 start
+        $cache.remarkConfirmBtn.on('click', function(e){
+            $.magnificPopup.close();
+            swal('提交成功!', '', 'success');
+        });
+        // 结束课程 end
 
         // 获取摄像头图片上传 start
         $cache.photoCancelBtn.on('click', function(e){
