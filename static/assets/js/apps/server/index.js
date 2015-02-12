@@ -496,7 +496,7 @@ define([
             $cache.umMsgBox = $cache.um.find('.edui-body-container');
             $cache.umBody.appendTo($cache.um);
 
-            $cache.taskSumBtn = $('<div class="task-sum-btn">发送</div>');
+            $cache.taskSumBtn = $('<div class="btn btn-primary task-sum-btn">发送</div>');
             $cache.taskWebcamBtn = $('<div class="task-webcam-btn"></div>');
             $cache.taskUploadBtn = $('<div class="task-upload-btn"><input type="file" name="upload" ' +
             'accept=".gif,.jpeg,.jpg,.png,wbmp,.bmp,.svg,.svgz,.webp"></div>');
