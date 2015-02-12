@@ -416,9 +416,15 @@ define([
         var onSendMsg;
         cache.taskMsg = [];
 
+        // fix bug send none msg
+        $cache.umMsgBox.html('');
+
         onSendMsg = function(){
             var cent, msg;
             cent = $cache.umMsgBox.html();
+            if(!cent.length){
+                return false;
+            }
             $cache.umMsgBox.html('');
             msg = {type: 'self', msg: cent};
             cache.taskMsg.push(msg);
