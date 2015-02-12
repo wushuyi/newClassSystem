@@ -122,6 +122,7 @@ define([
         }
     }
 
+    // 初始化滚动条
     function initScrollPane(callBack){
         $cache.win.on('resize', function(){
             // jspScroll response
@@ -365,7 +366,7 @@ define([
         $cache.playSoundBtn.on('click', onNoFn);
         $cache.morePlanBtn.on('click', onNoFn);
     }
-
+    // 对话框数据渲染
     function renderTaskView(msgs, callBack){
         var portraits, datas = [];
         if(!(msgs instanceof Array)){
@@ -392,7 +393,7 @@ define([
             callBack(out);
         });
     }
-
+    // 对话框数据渲染测试
     function taskViewTest(){
         var msgs = [
             {type: 'buddy', msg: 'test1'},
@@ -711,6 +712,7 @@ define([
         );
     }
 
+    // 媒体测试
     function mediaTest(){
         DetectRTC.load(function(){
             initElement(function(){
@@ -771,6 +773,7 @@ define([
         });
     }
 
+    // 初始化 app
     function initApp(){
         initScrollPane(function(){
             initCtlBtn(function(){
