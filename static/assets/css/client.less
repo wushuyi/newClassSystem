@@ -1,0 +1,325 @@
+/* main */
+#wrapper{
+  right: 0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: #2B3141;
+  position: absolute;
+}
+#main{
+  width: 1004px;
+  height: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+#left-cent{
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 100%;
+  background: #FFFFFF;
+  position: absolute;
+  .topbar{
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    border-bottom: 2px dashed #E6E6E6;
+    position: absolute;
+  }
+  .toolbar{
+    right: 0;
+    left: 0;
+    bottom: 0;
+    height: 50px;
+    position: absolute;
+    border-top: 1px solid #D9D9D9;
+
+    padding-left: 448px;
+  }
+  .title{
+    display: inline-block;
+    font-size: 18px;
+    color: #999999;
+    margin: 14px 0 0 30px;
+    padding: 2px;
+    position: relative;
+    float: left;
+    &:after{
+      content: '';
+      display: block;
+      position: absolute;
+      bottom: -6px;
+      right: 0;
+      left: 0;
+      border-bottom: 1px solid #999999;
+    }
+  }
+  .separated{
+    width: 1px;
+    height: 22px;
+    background: #F0f0f0;
+    margin: 14px 10px 12px 10px;
+    float: left;
+  }
+  .tool-btn{
+    cursor: pointer;
+    float: left;
+    font-size: 14px;
+    height: 24px;
+    line-height: 24px;
+    color: #999999;
+    padding-left: 30px;
+    margin: 14px 10px 10px 10px;
+    &:before{
+      content: '';
+      width: 30px;
+      height: 26px;
+      display: block;
+      position: absolute;
+    }
+  }
+  .prev-btn:before{
+    content: normal;
+  }
+  .next-btn:before{
+    content: normal;
+  }
+  .prev-btn,.next-btn{
+    padding-left: 0;
+    width: 20px;
+  }
+  .tool-num{
+    width: 50px;
+    cursor: pointer;
+    float: left;
+    height: 28px;
+    line-height: 28px;
+    color: #747474;
+    text-align: center;
+    margin: 12px 0 8px 0;
+    font-size: 24px;
+  }
+}
+
+#right-cent{
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100%;
+  background: #FFFFFF;
+  position: absolute;
+}
+
+#task-box-cent{
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #D9D9D9;
+  box-shadow: #D9D9D9 0px 0px 6px;
+  background: #FFFFFF;
+//  display: none;
+//  &:before{
+//    content: "";
+//    display: block;
+//    width: 0;
+//    height: 0;
+//    position: absolute;
+//    bottom: -10px;
+//    left: 20px;
+//    border-top: 10px solid #D9D9D9;
+//    border-right: 16px solid transparent;
+//    border-left: 16px solid transparent;
+//    z-index: 0;
+//  }
+//  &:after{
+//    content: "";
+//    display: block;
+//    width: 0;
+//    height: 0;
+//    position: absolute;
+//    bottom: -8px;
+//    left: 20px;
+//    border-top: 10px solid #FFFFFF;
+//    border-right: 16px solid transparent;
+//    border-left: 16px solid transparent;
+//    z-index: 1;
+//  }
+  .task-topbar{
+    height: 28px;
+    right: 0;
+    left: 0;
+    position: absolute;
+    font-size: 18px;
+    line-height: 28px;
+    background: #F7F7F7;
+    color: #9E9E9E;
+    text-align: center;
+    border-bottom: 1px solid #DCDCDC;
+  }
+  .task-name{
+    width: 200px;
+    margin-left: 88px;
+    float: left;
+    text-align: center;
+  }
+//  .task-close{
+//    width: 26px;
+//    height: 26px;
+//    float: right;
+//    cursor: pointer;
+//    background: url('../images/icons3.png') no-repeat -62px 8px;
+//  }
+  .task-cent{
+    top: 28px;
+    bottom: 135px;
+    right: 0;
+    left: 0;
+    position: absolute;
+    overflow: hidden;
+  }
+  .task-btmbar{
+    height: 135px;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    position: absolute;
+  }
+  .task-sum-btn{
+    //    background: #3498DB;
+    width: 70px;
+    height: 28px;
+    position: absolute;
+    right: 4px;
+    top: 1px;
+    color: #FFFFFF;
+    //    font-size: 18px;
+    text-align: center;
+    //    line-height: 28px;
+    border-radius: 2px;
+    cursor: pointer;
+
+    font-size: 16px;
+    line-height: 18px;
+  }
+  .task-webcam-btn{
+    cursor: pointer;
+    position: absolute;
+    width: 26px;
+    height: 22px;
+    left: 50px;
+    top: 4px;
+    background: url('../images/icons.png') no-repeat 0px -2px;
+  }
+  .task-upload-btn{
+    cursor: pointer;
+    position: absolute;
+    width: 30px;
+    height: 22px;
+    left: 92px;
+    top: 4px;
+    background: url('../images/icons.png') no-repeat -71px -2px;
+    overflow: hidden;
+    input{
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+  }
+
+  .chat_content_group.buddy {
+    text-align: left;
+  }
+  .chat_content_group {
+    padding: 10px;
+  }
+  .chat_content_avatar {
+    float: left;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+  }
+  .chat_nick {
+    font-size: 14px;
+    margin: 0 0 10px;
+  }
+  .chat_content {
+    display: inline-block;
+    min-height: 16px;
+    max-width: 50%;
+    background: #F7F7F7;
+    //            background: -webkit-gradient(linear,left top,left bottom,from(#cf9),to(#9c3));
+    //            background: -webkit-linear-gradient(#cf9,#9c3);
+    //            background: -moz-linear-gradient(#cf9,#9c3);
+    //            background: -ms-linear-gradient(#cf9,#9c3);
+    //            background: -o-linear-gradient(#cf9,#9c3);
+    //            background: linear-gradient(#cf9,#9c3);
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    padding: 10px 15px;
+    word-break: break-all;
+    //            box-shadow: 1px 1px 5px #000;
+    border: 1px solid #E6E6E6;
+    line-height: 1.4;
+    position: relative;
+    &:before {
+      content: "";
+      display: block;
+      position: absolute;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      border-right: 10px solid #E6E6E6;
+      top: 0px;
+      left: -10px;
+    }
+    &:after {
+      content: "";
+      display: block;
+      position: absolute;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      border-right: 10px solid #F7F7F7;
+      top: 0;
+      left: -6px;
+    }
+  }
+  .chat_content_group.self {
+    text-align: right;
+    .chat_content_avatar {
+      float: right;
+      margin: 0 0 0 10px;
+    }
+    .chat_nick {
+      text-align: right;
+    }
+    .chat_content {
+      text-align: left;
+    }
+    .chat_content {
+      background: #B5E1FF;
+      border: 1px solid #93C4E6;
+      //                background: -webkit-gradient(linear,left top,left bottom,from(white,#e1e1e1));
+      //                background: -webkit-linear-gradient(white,#e1e1e1);
+      //                background: -moz-linear-gradient(white,#e1e1e1);
+      //                background: -ms-linear-gradient(white,#e1e1e1);
+      //                background: -o-linear-gradient(white,#e1e1e1);
+      //                background: linear-gradient(#fff,#e1e1e1);
+      &:before {
+        border-right: none;
+        border-left: 10px solid #93C4E6;
+        right: -10px;
+        left: auto;
+      }
+      &:after {
+        border-right: none;
+        border-left: 10px solid #B5E1FF;
+        right: -6px;
+        left: auto;
+      }
+    }
+  }
+}

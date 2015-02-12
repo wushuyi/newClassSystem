@@ -36,7 +36,7 @@ define([
         webMedia,
         sendMedia;
 
-
+    // 初始化dom选择缓存
     function initElement(callBack){
         $cache.win = $(window);
         $cache.leftCent = $('#left-cent');
@@ -412,6 +412,7 @@ define([
 
     window.taskViewTest = taskViewTest;
 
+    // 富文本编辑器初始化事件
     function initUMEditorEvent(){
         var onSendMsg;
         cache.taskMsg = [];
@@ -493,6 +494,7 @@ define([
         });
     }
 
+    // 初始化富文本编辑器
     function initUMEditor(callBack){
         var umReady = function(stat){
             var umDom = um.container;
