@@ -5,11 +5,13 @@ define([
     'jquery',
     'lodashJs',
     'umeditorHf',
+    'WSY',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
     'wsy/get_offset_point',
     'wsy/hf_canvas_board',
+    'wsy/canvas_buff',
     'jScrollPane',
     'jqueryRaty',
     'sweetalert',
@@ -18,7 +20,8 @@ define([
 ],function(
     $,
     _,
-    UM
+    UM,
+    WSY
 ){
     'use strict';
 
@@ -198,6 +201,7 @@ define([
             });
             jspScrollList.ratyFn.reinitialise();
         });
+
         $cache.ratyConfirmBtn.on('click', function(e){
             $.magnificPopup.close();
             $.magnificPopup.open({
@@ -208,6 +212,7 @@ define([
                 modal: true
             });
         });
+
         $cache.remarkPrevBtn.on('click', function(e){
             $.magnificPopup.open({
                 items: {
@@ -221,9 +226,43 @@ define([
             $.magnificPopup.close();
             swal('提交成功!', '', 'success');
         });
+
         $cache.photoCancelBtn.on('click', function(e){
             $.magnificPopup.close();
             $cache.photoBox.attr('src', '');
+        });
+        $cache.photoConfirmBtn.on('click', function(e){
+            var videoEl, videoW, videoH, canvasEl, base64Img;
+            videoEl = $cache.photoBox.get(0);
+            videoW = $cache.photoBox.width();
+            videoH = $cache.photoBox.height();
+            videoEl.pause();
+            canvasEl = new WSY.CanvasBuffer(videoW, videoH);
+            canvasEl.context.drawImage(videoEl, 0, 0, videoW, videoH);
+            base64Img = canvasEl.canvas.toDataURL();
+            cache.photoBase64Img = base64Img;
+            $cache.photoCancelBtn.hide();
+            $cache.photoConfirmBtn.hide();
+            $cache.photoResetBtn.show();
+            $cache.photoUploadBtn.show();
+        });
+        $cache.photoResetBtn.on('click', function(e){
+            var videoEl;
+            videoEl = $cache.photoBox.get(0);
+            videoEl.play();
+            $cache.photoCancelBtn.show();
+            $cache.photoConfirmBtn.show();
+            $cache.photoResetBtn.hide();
+            $cache.photoUploadBtn.hide();
+        });
+        $cache.photoUploadBtn.on('click', function(e){
+            console.log(cache.photoBase64Img);
+            $.magnificPopup.close();
+            $cache.photoBox.attr('src', '');
+            $cache.photoCancelBtn.show();
+            $cache.photoConfirmBtn.show();
+            $cache.photoResetBtn.hide();
+            $cache.photoUploadBtn.hide();
         });
 
         $cache.taskCtlBtn.on('click', function(e){
@@ -341,9 +380,24 @@ define([
             cache.taskMsg.push(msg);
 
             renderTaskView([msg], function(data){
-                $cache.taskScroll.append(data);
-                jspScrollList.taskFn.reinitialise();
-                jspScrollList.taskFn.scrollToBottom(0.6);
+                var $imgs, imgLen, loadLen;
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function(i ,img){
+                    img.onload = function(){
+                        loadLen +=1;
+                        if(imgLen === loadLen){
+                            $cache.taskScroll.append(data);
+                            setTimeout(function(){
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
+
+
             });
         };
         $cache.taskSumBtn.on('click', function(e){
