@@ -543,7 +543,7 @@ define([
         initScrollPane(function(){
             initCtlBtn(function(){
                 initUMEditor(function(){
-                    var imgUrl = 'http://localhost:63342/newClassSystem/static/assets/images/width600.png';
+                    var imgUrl = './assets/images/width600.png';
                     initSketchpadBox(imgUrl);
                 });
             });
@@ -553,7 +553,7 @@ define([
     //initElement(function(){
     //    initScrollPane(function(){
     //        initUMEditor(function(){
-    //            var imgUrl = 'http://localhost:63342/newClassSystem/static/assets/images/width600.png';
+    //            var imgUrl = './assets/images/width600.png';
     //            initSketchpadBox(imgUrl);
     //        });
     //    });

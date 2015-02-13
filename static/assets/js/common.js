@@ -46,7 +46,10 @@ requirejs.config({
         },
         umeditorHf: {
             exports: 'UM',
-            deps: ['umeditorHfConfig']
+            deps: [
+                'jquery',
+                'umeditorHfConfig'
+            ]
         },
         sweetalert: {
             exports: '-'
