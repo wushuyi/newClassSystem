@@ -3,10 +3,12 @@
  */
 define([
     'jquery',
+    'qjs',
     'lodashJs',
     'umeditorHf',
     'WSY',
     'apps/util/canvas-to-blob',
+    'draggabilly',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
@@ -20,10 +22,12 @@ define([
     'loadImageAll'
 ],function(
     $,
+    Q,
     _,
     UM,
     WSY,
-    dataURLtoBlob
+    dataURLtoBlob,
+    Draggabilly
 ){
     'use strict';
 
@@ -37,7 +41,9 @@ define([
         sendMedia;
 
     // 初始化dom选择缓存
-    function initElement(callBack){
+    function initElement(){
+        var deferred = Q.defer();
+
         $cache.win = $(window);
         $cache.leftCent = $('#left-cent');
         $cache.rightCent = $('#right-cent');
@@ -117,13 +123,14 @@ define([
         $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
 
-        if(callBack){
-            callBack();
-        }
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 初始化滚动条
-    function initScrollPane(callBack){
+    function initScrollPane(){
+        var deferred = Q.defer();
+
         $cache.win.on('resize', function(){
             // jspScroll response
             if(jspScrollList.planFn ||
@@ -157,12 +164,13 @@ define([
         jspScrollList.ratyFn = $cache.ratyPopScroll.jScrollPane({
             hideFocus: true
         }).data('jsp');
-        if(callBack){
-            callBack();
-        }
+
+        deferred.resolve();
+        return deferred.promise;
     }
 
-    function initCtlBtn(callBack){
+    function initCtlBtn(){
+        var deferred = Q.defer();
         var preventDefault;
         // 阻止默认事件 start
 
@@ -302,6 +310,7 @@ define([
             if(!lockCtl.taskBox){
                 $cache.taskBoxCent.show();
                 jspScrollList.taskFn.reinitialise();
+                jspScrollList.taskFn.scrollToBottom(0);
                 lockCtl.taskBox = true;
             }else{
                 $cache.taskBoxCent.hide();
@@ -349,12 +358,12 @@ define([
         });
         // 控制按钮 end
 
-        if(callBack){
-            callBack();
-        }
+        deferred.resolve();
+        return deferred.promise;
     }
 
     function initNoFnBtn(){
+        var deferred = Q.defer();
         var onNoFn;
         onNoFn = function(e){
             e.preventDefault();
@@ -365,9 +374,13 @@ define([
         $cache.playVideoBtn.on('click', onNoFn);
         $cache.playSoundBtn.on('click', onNoFn);
         $cache.morePlanBtn.on('click', onNoFn);
+        deferred.resolve();
+        return deferred.promise;
     }
     // 对话框数据渲染
-    function renderTaskView(msgs, callBack){
+    function renderTaskView(msgs){
+        var deferred = Q.defer();
+
         var portraits, datas = [];
         if(!(msgs instanceof Array)){
             throw 'msgs must be array!';
@@ -390,31 +403,19 @@ define([
             datas.push(data);
         }
         dust.render('taskView', {msgs: datas}, function(err, out){
-            callBack(out);
+            if(err){
+                deferred.reject(err);
+            }else{
+                deferred.resolve(out);
+            }
         });
-    }
-    // 对话框数据渲染测试
-    function taskViewTest(){
-        var msgs = [
-            {type: 'buddy', msg: 'test1'},
-            {type: 'self', msg: 'test2'},
-            {type: 'buddy', msg: 'test3'},
-            {type: 'buddy', msg: 'test4'},
-            {type: 'self', msg: 'test5'},
-            {type: 'buddy', msg: 'test6'},
-            {type: 'self', msg: 'test7'}
-        ];
-        renderTaskView(msgs, function(data){
-            $cache.taskScroll.append(data);
-            jspScrollList.taskFn.reinitialise();
-            jspScrollList.taskFn.scrollToBottom(0.6);
-        });
-    }
 
-    window.taskViewTest = taskViewTest;
+        return deferred.promise;
+    }
 
     // 富文本编辑器初始化事件
     function initUMEditorEvent(){
+        var deferred = Q.defer();
         var onSendMsg;
         cache.taskMsg = [];
 
@@ -431,24 +432,25 @@ define([
             msg = {type: 'self', msg: cent};
             cache.taskMsg.push(msg);
 
-            renderTaskView([msg], function(data){
-                var $imgs, imgLen, loadLen;
-                $imgs = $(data).find('img');
-                imgLen = $imgs.size();
-                loadLen = 0;
-                $imgs.each(function(i ,img){
-                    img.onload = function(){
-                        loadLen +=1;
-                        if(imgLen === loadLen){
-                            $cache.taskScroll.append(data);
-                            setTimeout(function(){
-                                jspScrollList.taskFn.reinitialise();
-                                jspScrollList.taskFn.scrollToBottom(0.3);
-                            }, 0);
-                        }
-                    };
+            renderTaskView([msg])
+                .then(function(data){
+                    var $imgs, imgLen, loadLen;
+                    $imgs = $(data).find('img');
+                    imgLen = $imgs.size();
+                    loadLen = 0;
+                    $imgs.each(function(i ,img){
+                        img.onload = function(){
+                            loadLen +=1;
+                            if(imgLen === loadLen){
+                                $cache.taskScroll.append(data);
+                                setTimeout(function(){
+                                    jspScrollList.taskFn.reinitialise();
+                                    jspScrollList.taskFn.scrollToBottom(0.3);
+                                }, 0);
+                            }
+                        };
+                    });
                 });
-            });
         };
         $cache.taskSumBtn.on('click', function(e){
             onSendMsg();
@@ -493,10 +495,13 @@ define([
                 }
             );
         });
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 初始化富文本编辑器
-    function initUMEditor(callBack){
+    function initUMEditor(){
+        var deferred = Q.defer();
         var umReady = function(stat){
             var umDom = um.container;
             $cache.um = $(umDom);
@@ -514,16 +519,16 @@ define([
             $cache.umTool.append($cache.taskWebcamBtn);
             $cache.umTool.append($cache.taskUploadBtn);
 
-            initUMEditorEvent();
-            if(callBack){
-                callBack();
-            }
+            deferred.resolve();
         };
         var um = UM.getEditor('myEditor');
         um.addListener('ready', umReady);
+        return deferred.promise;
     }
 
-    function initSketchpadEvent(callBack){
+    // 初始化画布事件
+    function initSketchpadEvent(){
+        var deferred = Q.defer();
         var $canvas, myBoard, parentOffset, offsetPoint;
         lockCtl.drawType = 'pen';
         $canvas = $cache.sketchpadFg;
@@ -580,13 +585,14 @@ define([
             }
         });
 
-        initSketchpadCtl();
-        if(callBack){
-            callBack();
-        }
+        //initSketchpadCtl();
+        deferred.resolve();
+        return deferred.promise;
     }
 
+    // 初始化画布控制
     function initSketchpadCtl(){
+        var deferred = Q.defer();
         var eraser, pen, penBlack, penRed, myBoard;
         myBoard = cache.Board;
         eraser = function(isRemote){
@@ -635,9 +641,13 @@ define([
         $cache.eraserBtn.on('click', function(){
            eraser();
         });
+        deferred.resolve();
+        return deferred.promise;
     }
 
-    function initSketchpadBox(imgUrl ,callBack){
+    // 初始化画布框
+    function initSketchpadBox(imgUrl){
+        var deferred = Q.defer();
         var loadSuccess;
         loadSuccess = function(canvas){
             var Board, canvas2;
@@ -661,11 +671,8 @@ define([
 
             jspScrollList.sketchpadFn.reinitialise();
 
-            if(callBack){
-                initSketchpadEvent(callBack);
-            }else{
-                initSketchpadEvent();
-            }
+            //initSketchpadEvent();
+            deferred.resolve();
         };
 
         loadImage(
@@ -682,19 +689,18 @@ define([
                 canvas: true
             }
         );
+        return deferred.promise;
     }
 
-    function initPlanBox(imgUrl, callBack){
+    function initPlanBox(imgUrl){
+        var deferred = Q.defer();
         var loadSuccess;
         loadSuccess = function(canvas){
             $cache.planFg = $(canvas);
             canvas.className = 'plan-img';
             $cache.planScroll.html(canvas);
             jspScrollList.planFn.reinitialise();
-
-            if(callBack){
-                callBack();
-            }
+            deferred.resolve();
         };
         loadImage(
             imgUrl,
@@ -710,33 +716,39 @@ define([
                 canvas: true
             }
         );
+        return deferred.promise;
     }
 
-    // 媒体测试
+    //媒体测试弹窗
     function mediaTest(){
-        DetectRTC.load(function(){
-            initElement(function(){
-                $cache.mediaTest.on('contextmenu', function(e){
-                    e.preventDefault();
-                });
-                $cache.mediaTestSuccessBtn.click('click', function(e){
-                    initApp();
-                    $cache.mediaTest.attr('src', '');
-                    $.magnificPopup.close();
-                });
-                $cache.mediaTestErrorBtn.click('click', function(e){
-                    $cache.mediaTestSuccessBtn.hide();
-                    swal('请调整设备, 或联系老师!', '', 'warning');
-                });
-                $.magnificPopup.open({
-                    items: {
-                        src: $cache.testMediaPop
-                    },
-                    type: 'inline',
-                    modal: true
-                });
-            });
+        var deferred = Q.defer();
+        $cache.mediaTest.attr('src', cache.webMediaUrl);
+        $cache.mediaTest.on('contextmenu', function(e){
+            e.preventDefault();
+        });
+        $cache.mediaTestSuccessBtn.click('click', function(e){
+            $cache.mediaTest.attr('src', '');
+            $.magnificPopup.close();
+            deferred.resolve();
+        });
+        $cache.mediaTestErrorBtn.click('click', function(e){
+            $cache.mediaTestSuccessBtn.hide();
+            swal('请调整设备, 或联系老师!', '', 'warning');
+        });
+        $.magnificPopup.open({
+            items: {
+                src: $cache.testMediaPop
+            },
+            type: 'inline',
+            modal: true
+        });
+        return deferred.promise;
+    }
 
+    // 初始化媒体测试
+    function detectRTCInit(){
+        var deferred = Q.defer();
+        DetectRTC.load(function(){
             if(!DetectRTC.browser.isChrome){
                 swal('对不起,浏览器版本不兼容!', '请使用Google Chrome浏览器!', 'error');
                 $cache.mediaTestSuccessBtn.hide();
@@ -763,35 +775,37 @@ define([
                     sendMedia = media.clone();
                     webMedia = media.clone();
                     cache.webMediaUrl = URL.createObjectURL(webMedia);
-                    $cache.mediaTest.attr('src', cache.webMediaUrl);
+                    deferred.resolve();
 
                     window.localMedia = localMedia;
                     window.sendMedia = sendMedia;
-
                 }
             });
         });
+        return deferred.promise;
     }
 
-    // 初始化 app
-    function initApp(){
-        initScrollPane(function(){
-            initCtlBtn(function(){
-                initUMEditor(function(){
-                    var imgUrl = './assets/images/width600.png';
-                    initSketchpadBox(imgUrl);
-                    initPlanBox(imgUrl);
-                    initNoFnBtn();
-                });
+    detectRTCInit()
+        .then(initElement)
+        .then(mediaTest)
+        .then(initScrollPane)
+        .then(initCtlBtn)
+        .then(initUMEditor)
+        .then(initUMEditorEvent)
+        .then(function(){
+            return Q.Promise(function(resolve, reject, notify){
+                var testImg = './assets/images/width600.png';
+                initPlanBox(testImg);
+                initSketchpadBox(testImg)
+                    .then(initSketchpadEvent)
+                    .then(initSketchpadCtl)
+                    .done(function(){
+                        resolve();
+                    });
             });
-        });
-    }
-
-    //initElement(function(){
-    //    initApp();
-    //
-    //});
-    mediaTest();
+        })
+        .then(initNoFnBtn)
+        .done();
 
     // object to global debug
     window.jspScrollList = jspScrollList;
@@ -801,4 +815,25 @@ define([
     window.initSketchpadBox = initSketchpadBox;
 
     window.dataURLtoBlob = dataURLtoBlob;
+
+    // 对话框数据渲染测试
+    function taskViewTest(){
+        var msgs = [
+            {type: 'buddy', msg: 'test1'},
+            {type: 'self', msg: 'test2'},
+            {type: 'buddy', msg: 'test3'},
+            {type: 'buddy', msg: 'test4'},
+            {type: 'self', msg: 'test5'},
+            {type: 'buddy', msg: 'test6'},
+            {type: 'self', msg: 'test7'}
+        ];
+        renderTaskView(msgs)
+            .then(function(data){
+                $cache.taskScroll.append(data);
+                jspScrollList.taskFn.reinitialise();
+                jspScrollList.taskFn.scrollToBottom(0.6);
+            });
+    }
+
+    window.taskViewTest = taskViewTest;
 });

@@ -2,6 +2,7 @@
  * Created by shuyi.wu on 2015/2/5.
  */
 requirejs.config({
+    waitSeconds: 15,
     urlArgs: 'buts=' + (new Date()).getTime(),
     baseUrl: 'assets',
     paths: {
@@ -29,7 +30,9 @@ requirejs.config({
         wsy: 'js/apps/util/wsy',
         DetectRTC: 'js/apps/util/DetectRTC',
         RTCPeerConnection: 'js/apps/util/RTCPeerConnection-v1.5',
-        loadImageAll: 'js/apps/util/load-image-all'
+        loadImageAll: 'js/apps/util/load-image-all',
+        draggabilly: 'libs/draggabilly/1.1.2/draggabilly.pkgd',
+        qjs: 'libs/q.js/2.0.3/q'
     },
     shim: {
         modernizr: {
