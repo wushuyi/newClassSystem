@@ -805,7 +805,12 @@ define([
             });
         })
         .then(initNoFnBtn)
-        .done();
+        .done(function(){
+            var draggie = new Draggabilly($('#dragwin').get(0), {
+                containment: $('#wrapper').get(0),
+                handle: '.topbar'
+            });
+        });
 
     // object to global debug
     window.jspScrollList = jspScrollList;
