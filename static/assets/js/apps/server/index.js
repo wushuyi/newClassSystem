@@ -132,8 +132,6 @@ define([
         return deferred.promise;
     }
 
-
-
     // 初始化滚动条
     function initScrollPane(){
         var deferred = Q.defer();
@@ -697,6 +695,10 @@ define([
 
             jspScrollList.sketchpadFn.reinitialise();
 
+            Board.onSendBoardData = function(data){
+               console.log(JSON.stringify(data));
+            };
+
             //initSketchpadEvent();
             deferred.resolve();
         };
@@ -854,10 +856,10 @@ define([
             cache.winW = $cache.win.width();
             cache.winH = $cache.win.height();
         });
-
-        initElement()
-            //.then(DetectRTC)
-            //.then(mediaTest)
+        detectRTCInit()
+            .then(initElement)
+            .then(DetectRTC)
+            .then(mediaTest)
             .then(initScrollPane)
             .then(initCtlBtn)
             .then(initUMEditor)
