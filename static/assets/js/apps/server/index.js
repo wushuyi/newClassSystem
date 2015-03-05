@@ -39,15 +39,20 @@ define([
         localMedia,
         webMedia,
         sendMedia;
+    $cache.win = $(window);
 
     // 初始化dom选择缓存
     function initElement(){
         var deferred = Q.defer();
 
-        $cache.win = $(window);
+        $cache.wrapper = $('#wrapper');
         $cache.leftCent = $('#left-cent');
         $cache.rightCent = $('#right-cent');
         $cache.taskBoxCent = $('#task-box-cent');
+
+        $cache.winImg = $('#win-img');
+        $cache.winImgClose = $cache.winImg.find('.win-close');
+        $cache.winImgZoom = $cache.winImg.find('.zoom-img');
 
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
@@ -126,6 +131,8 @@ define([
         deferred.resolve();
         return deferred.promise;
     }
+
+
 
     // 初始化滚动条
     function initScrollPane(){
@@ -325,7 +332,7 @@ define([
 
         // 控制按钮 start
         $cache.answerLock.on('change', function(e) {
-            var checked = $cache.answerLock.get(0).checked;
+            var checked = $cache.answerLock.prop('checked');
             if (checked) {
                 $cache.answerBtn.trigger('answerLock');
             }
@@ -357,6 +364,24 @@ define([
             }
         });
         // 控制按钮 end
+
+        // 聊天框图片查看 start
+        $cache.taskScroll.on('click', 'img.input-img', function(e){
+            var $self = $(this);
+            $cache.winImgZoom
+                .attr('src', $self.attr('src'));
+            $cache.winImg.show();
+        });
+        $cache.winImgClose.on('click', function(e){
+            $cache.winImg.hide();
+        });
+        $cache.winImgZoom.on('dragstart', function(e){
+            e.preventDefault();
+        });
+        $cache.taskScroll.on('dragstart', 'img', function(e){
+            e.preventDefault();
+        });
+        // 聊天框图片查看 end
 
         deferred.resolve();
         return deferred.promise;
@@ -439,6 +464,7 @@ define([
                     imgLen = $imgs.size();
                     loadLen = 0;
                     $imgs.each(function(i ,img){
+                        console.log(img);
                         img.onload = function(){
                             loadLen +=1;
                             if(imgLen === loadLen){
@@ -785,32 +811,77 @@ define([
         return deferred.promise;
     }
 
-    detectRTCInit()
-        .then(initElement)
-        .then(mediaTest)
-        .then(initScrollPane)
-        .then(initCtlBtn)
-        .then(initUMEditor)
-        .then(initUMEditorEvent)
-        .then(function(){
-            return Q.Promise(function(resolve, reject, notify){
-                var testImg = './assets/images/width600.png';
-                initPlanBox(testImg);
-                initSketchpadBox(testImg)
-                    .then(initSketchpadEvent)
-                    .then(initSketchpadCtl)
-                    .done(function(){
-                        resolve();
-                    });
-            });
-        })
-        .then(initNoFnBtn)
-        .done(function(){
-            var draggie = new Draggabilly($('#dragwin').get(0), {
-                containment: $('#wrapper').get(0),
-                handle: '.topbar'
-            });
+    // 可拖拽图片放大框
+    function dragImg(){
+        function limtImgSize(){
+            var winImg;
+
+            $cache.winImgZoom
+                .css({
+                    'max-width': cache.winW - 2,
+                    'max-height': cache.winH - 32
+                });
+            winImg = {
+                left : + $cache.winImg.css('left').split('px')[0],
+                top: + $cache.winImg.css('top').split('px')[0],
+                width: $cache.winImg.width(),
+                height: $cache.winImg.height()
+            };
+
+            if(winImg.left + winImg.width > cache.winW){
+                $cache.winImg.css('left',  cache.winW - winImg.width);
+            }
+            if(winImg.top + winImg.height > cache.winH){
+                $cache.winImg.css('top', cache.winH - winImg.height);
+            }
+        }
+        $cache.win.on('resize', function(){
+            limtImgSize();
         });
+        var draggie = new Draggabilly($cache.winImg.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        draggie = null;
+        limtImgSize();
+    }
+
+    // 初始化
+    function init(){
+        cache.winW = $cache.win.width();
+        cache.winH = $cache.win.height();
+        $cache.win.on('resize', function(){
+            cache.winW = $cache.win.width();
+            cache.winH = $cache.win.height();
+        });
+
+        initElement()
+            //.then(DetectRTC)
+            //.then(mediaTest)
+            .then(initScrollPane)
+            .then(initCtlBtn)
+            .then(initUMEditor)
+            .then(initUMEditorEvent)
+            .then(function(){
+                return Q.Promise(function(resolve, reject, notify){
+                    var testImg = './assets/images/width600.png';
+                    initPlanBox(testImg);
+                    initSketchpadBox(testImg)
+                        .then(initSketchpadEvent)
+                        .then(initSketchpadCtl)
+                        .done(function(){
+                            resolve();
+                        });
+                });
+            })
+            .then(initNoFnBtn)
+            .done(function(){
+                dragImg();
+            });
+    }
+
+    init();
+
 
     // object to global debug
     window.jspScrollList = jspScrollList;
@@ -830,13 +901,26 @@ define([
             {type: 'buddy', msg: 'test4'},
             {type: 'self', msg: 'test5'},
             {type: 'buddy', msg: 'test6'},
-            {type: 'self', msg: 'test7'}
+            {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
         ];
         renderTaskView(msgs)
             .then(function(data){
+                var $imgs, imgLen, loadLen;
                 $cache.taskScroll.append(data);
-                jspScrollList.taskFn.reinitialise();
-                jspScrollList.taskFn.scrollToBottom(0.6);
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function(i ,img){
+                    img.onload = function(){
+                        loadLen +=1;
+                        if(imgLen === loadLen){
+                            setTimeout(function(){
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
             });
     }
 
