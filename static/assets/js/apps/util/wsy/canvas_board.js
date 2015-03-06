@@ -347,20 +347,21 @@ define([
             self.restoreStyle.call(self);
         };
 
-        proto.setBgImg = function(options){
+        proto.setView = function(options, callback){
             if(!options || typeof options !== 'object'){
                 throw 'error options';
             }
-            if(!options.image){
-                throw 'must be options: image';
+            if(!options.view){
+                throw 'must be options: view (img | canvas | URL)';
             }
             var self = this;
             var canvas = self._canvas.canvas;
             var ctx = self._canvas.context;
             var setCanvasSize = {};
-
-            var img = new Image();
-            img.onload = function(){
+            var onReady, view;
+            view = options.view;
+            onReady = function (view){
+                console.log(view);
                 self.saveStyle.call(self);
 
                 if(options.width){
@@ -370,27 +371,43 @@ define([
                     setCanvasSize.height = options.height;
                 }
                 if(options.addWidth){
-                    setCanvasSize.width = img.width + options.addWidth;
+                    setCanvasSize.width = view.width + options.addWidth;
                 }
                 if(options.addHeight){
-                    setCanvasSize.height = img.height + options.addHeight;
+                    setCanvasSize.height = view.height + options.addHeight;
                 }
                 if(!setCanvasSize.width){
-                    setCanvasSize.width = img.width;
+                    setCanvasSize.width = view.width;
                 }
                 if(!setCanvasSize.height){
-                    setCanvasSize.height = img.height;
+                    setCanvasSize.height = view.height;
                 }
 
                 canvas.width = setCanvasSize.width;
                 canvas.height = setCanvasSize.height;
 
-                ctx.drawImage(img, 0, 0, img.width, img.height);
+                ctx.drawImage(view, 0, 0, view.width, view.height);
 
-                img = null;
+                view = null;
                 self.restoreStyle.call(self);
+                if(callback){
+                    callback();
+                }
             };
-            img.src = options.image;
+
+            if(typeof view === 'object'){
+                console.log(view.nodeName);
+                if(view.nodeName === 'IMG' || view.nodeName === 'CANVAS'){
+                    console.log('ok');
+                    onReady(view);
+                }
+            }else if(typeof view === 'string'){
+                var img = document.createElement('img');
+                img.onload = function(){
+                    onReady(img);
+                };
+                img.src = view;
+            }
         };
 
         proto.addPartitionPage = function(options){

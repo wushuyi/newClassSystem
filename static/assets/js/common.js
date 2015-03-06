@@ -2,7 +2,7 @@
  * Created by shuyi.wu on 2015/2/5.
  */
 requirejs.config({
-    waitSeconds: 15,
+    waitSeconds: 30,
     urlArgs: 'buts=' + (new Date()).getTime(),
     baseUrl: 'assets',
     paths: {
