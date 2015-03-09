@@ -502,9 +502,11 @@ define([
                     });
                 });
         };
+        // 发送按钮
         $cache.taskSumBtn.on('click', function(e){
             onSendMsg();
         });
+        // 获取摄像头图片按钮
         $cache.taskWebcamBtn.on('click', function(e){
             $.magnificPopup.open({
                 items: {
@@ -515,6 +517,7 @@ define([
             });
             $cache.photoBox.attr('src', cache.webMediaUrl);
         });
+        // 上传本地图片按钮
         $cache.taskUploadBtn.find('input[type="file"]').on('change', function(e){
             var $self,file, blobUrl;
             var successLoad, loadImg;
@@ -574,12 +577,14 @@ define([
         };
         var um = UM.getEditor('myEditor');
         um.addListener('ready', umReady);
+
         return deferred.promise;
     }
 
     // 初始化画布事件
     function initSketchpadEvent(){
         var deferred = Q.defer();
+
         var $canvas, myBoard, parentOffset, offsetPoint;
         lockCtl.drawType = 'pen';
         $canvas = $cache.sketchpadFg;
@@ -636,7 +641,6 @@ define([
             }
         });
 
-        //initSketchpadCtl();
         deferred.resolve();
         return deferred.promise;
     }
@@ -935,55 +939,53 @@ define([
     })();
 
 
-    // object to global debug
-    window.jspScrollList = jspScrollList;
-    window.$cache = $cache;
-    window.cache = cache;
-    window.util = util;
-
-    window.testBoard = function(bgUrl, fgUrl){
-        //initPlanBox(imgUrl);
-        //cache.Board.setBgImg({
-        //    image: imgUrl
-        //});
-        setSketchpadView(bgUrl, fgUrl);
-    };
-
-    window.dataURLtoBlob = dataURLtoBlob;
-
-    // 对话框数据渲染测试
-    function taskViewTest(){
-        var msgs = [
-            {type: 'buddy', msg: 'test1'},
-            {type: 'self', msg: 'test2'},
-            {type: 'buddy', msg: 'test3'},
-            {type: 'buddy', msg: 'test4'},
-            {type: 'self', msg: 'test5'},
-            {type: 'buddy', msg: 'test6'},
-            {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
-        ];
-        renderTaskView(msgs)
-            .then(function(data){
-                var $imgs, imgLen, loadLen;
-                $cache.taskScroll.append(data);
-                $imgs = $(data).find('img');
-                imgLen = $imgs.size();
-                loadLen = 0;
-                $imgs.each(function(i ,img){
-                    img.onload = function(){
-                        loadLen +=1;
-                        if(imgLen === loadLen){
-                            setTimeout(function(){
-                                jspScrollList.taskFn.reinitialise();
-                                jspScrollList.taskFn.scrollToBottom(0.3);
-                            }, 0);
-                        }
-                    };
-                });
-            });
-    }
-
-    window.taskViewTest = taskViewTest;
+    //// object to global debug
+    //window.jspScrollList = jspScrollList;
+    //window.$cache = $cache;
+    //window.cache = cache;
+    //window.util = util;
+    //
+    //window.testBoard = function(bgUrl, fgUrl){
+    //    //initPlanBox(imgUrl);
+    //    //cache.Board.setBgImg({
+    //    //    image: imgUrl
+    //    //});
+    //    setSketchpadView(bgUrl, fgUrl);
+    //};
+    //
+    //window.dataURLtoBlob = dataURLtoBlob;
+    //
+    //// 对话框数据渲染测试
+    //function taskViewTest(){
+    //    var msgs = [
+    //        {type: 'buddy', msg: 'test1'},
+    //        {type: 'self', msg: 'test2'},
+    //        {type: 'buddy', msg: 'test3'},
+    //        {type: 'buddy', msg: 'test4'},
+    //        {type: 'self', msg: 'test5'},
+    //        {type: 'buddy', msg: 'test6'},
+    //        {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
+    //    ];
+    //    renderTaskView(msgs)
+    //        .then(function(data){
+    //            var $imgs, imgLen, loadLen;
+    //            $cache.taskScroll.append(data);
+    //            $imgs = $(data).find('img');
+    //            imgLen = $imgs.size();
+    //            loadLen = 0;
+    //            $imgs.each(function(i ,img){
+    //                img.onload = function(){
+    //                    loadLen +=1;
+    //                    if(imgLen === loadLen){
+    //                        setTimeout(function(){
+    //                            jspScrollList.taskFn.reinitialise();
+    //                            jspScrollList.taskFn.scrollToBottom(0.3);
+    //                        }, 0);
+    //                    }
+    //                };
+    //            });
+    //        });
+    //}
+    //
+    //window.taskViewTest = taskViewTest;
 });
-
-// javascript translate

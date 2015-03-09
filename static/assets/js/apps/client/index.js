@@ -3,16 +3,19 @@
  */
 define([
     'jquery',
+    'qjs',
     'lodashJs',
     'umeditorHf',
     'WSY',
     'apps/util/canvas-to-blob',
+    'draggabilly',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
     'wsy/get_offset_point',
     'wsy/hf_canvas_board',
     'wsy/canvas_buff',
+    'wsy/stepFn',
     'jScrollPane',
     'jqueryRaty',
     'sweetalert',
@@ -20,14 +23,17 @@ define([
     'loadImageAll'
 ],function(
     $,
+    Q,
     _,
     UM,
     WSY,
-    dataURLtoBlob
+    dataURLtoBlob,
+    Draggabilly
 ){
     'use strict';
 
-    var $cache = {},
+    var util = {},
+        $cache = {},
         cache = {},
         jspScrollList = {},
         timerList = {},
@@ -36,12 +42,40 @@ define([
         webMedia,
         sendMedia;
 
+    $cache.win = $(window);
+
+    util.loadImg2Canvas = function(imgUrl, options){
+        var deferred = Q.defer();
+        options = options ? options : {
+            canvas: true
+        };
+        loadImage(
+            imgUrl,
+            function (canvas) {
+                if(canvas.type === 'error') {
+                    deferred.reject('Error loading image :' + canvas.path[0].src);
+                    swal('图片加载错误!', '', 'error');
+                } else {
+                    deferred.resolve(canvas);
+                }
+            },
+            options
+        );
+        return deferred.promise;
+    };
+
     // 初始化dom选择缓存
-    function initElement(callBack){
-        $cache.win = $(window);
+    function initElement(){
+        var deferred = Q.defer();
+
+        $cache.wrapper = $('#wrapper');
         $cache.leftCent = $('#left-cent');
         $cache.rightCent = $('#right-cent');
         $cache.taskBoxCent = $('#task-box-cent');
+
+        $cache.winImg = $('#win-img');
+        $cache.winImgClose = $cache.winImg.find('.win-close');
+        $cache.winImgZoom = $cache.winImg.find('.zoom-img');
 
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
@@ -77,13 +111,14 @@ define([
         $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
 
-        if(callBack){
-            callBack();
-        }
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 初始化滚动条
-    function initScrollPane(callBack){
+    function initScrollPane(){
+        var deferred = Q.defer();
+
         $cache.win.on('resize', function(){
             // jspScroll response
             if(jspScrollList.sketchpadFn ||
@@ -107,13 +142,14 @@ define([
         jspScrollList.taskFn = $cache.taskCent.jScrollPane({
             hideFocus: true
         }).data('jsp');
-        if(callBack){
-            callBack();
-        }
+
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 初始化按钮事件
-    function initCtlBtn(callBack){
+    function initCtlBtn(){
+        var deferred = Q.defer();
         var preventDefault;
         // 阻止默认事件 start
 
@@ -202,13 +238,32 @@ define([
         });
         // 控制按钮 end
 
-        if(callBack){
-            callBack();
-        }
+        // 聊天框图片查看 start
+        $cache.taskScroll.on('click', 'img.input-img', function(e){
+            var $self = $(this);
+            $cache.winImgZoom
+                .attr('src', $self.attr('src'));
+            $cache.winImg.show();
+        });
+        $cache.winImgClose.on('click', function(e){
+            $cache.winImg.hide();
+        });
+        $cache.winImgZoom.on('dragstart', function(e){
+            e.preventDefault();
+        });
+        $cache.taskScroll.on('dragstart', 'img', function(e){
+            e.preventDefault();
+        });
+        // 聊天框图片查看 end
+
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 对话框数据渲染
-    function renderTaskView(msgs, callBack){
+    function renderTaskView(msgs){
+        var deferred = Q.defer();
+
         var portraits, datas = [];
         if(!(msgs instanceof Array)){
             throw 'msgs must be array!';
@@ -231,32 +286,20 @@ define([
             datas.push(data);
         }
         dust.render('taskView', {msgs: datas}, function(err, out){
-            callBack(out);
+            if(err){
+                deferred.reject(err);
+            }else{
+                deferred.resolve(out);
+            }
         });
-    }
 
-    // 对话框数据渲染测试
-    function taskViewTest(){
-        var msgs = [
-            {type: 'buddy', msg: 'test1'},
-            {type: 'self', msg: 'test2'},
-            {type: 'buddy', msg: 'test3'},
-            {type: 'buddy', msg: 'test4'},
-            {type: 'self', msg: 'test5'},
-            {type: 'buddy', msg: 'test6'},
-            {type: 'self', msg: 'test7'}
-        ];
-        renderTaskView(msgs, function(data){
-            $cache.taskScroll.append(data);
-            jspScrollList.taskFn.reinitialise();
-            jspScrollList.taskFn.scrollToBottom(0.6);
-        });
+        return deferred.promise;
     }
-
-    window.taskViewTest = taskViewTest;
 
     // 富文本编辑器初始化事件
     function initUMEditorEvent(){
+        var deferred = Q.defer();
+
         var onSendMsg;
         cache.taskMsg = [];
 
@@ -273,28 +316,32 @@ define([
             msg = {type: 'self', msg: cent};
             cache.taskMsg.push(msg);
 
-            renderTaskView([msg], function(data){
-                var $imgs, imgLen, loadLen;
-                $imgs = $(data).find('img');
-                imgLen = $imgs.size();
-                loadLen = 0;
-                $imgs.each(function(i ,img){
-                    img.onload = function(){
-                        loadLen +=1;
-                        if(imgLen === loadLen){
-                            $cache.taskScroll.append(data);
-                            setTimeout(function(){
-                                jspScrollList.taskFn.reinitialise();
-                                jspScrollList.taskFn.scrollToBottom(0.3);
-                            }, 0);
-                        }
-                    };
+            renderTaskView([msg])
+                .then(function(data){
+                    var $imgs, imgLen, loadLen;
+                    $imgs = $(data).find('img');
+                    imgLen = $imgs.size();
+                    loadLen = 0;
+                    $imgs.each(function(i ,img){
+                        console.log(img);
+                        img.onload = function(){
+                            loadLen +=1;
+                            if(imgLen === loadLen){
+                                $cache.taskScroll.append(data);
+                                setTimeout(function(){
+                                    jspScrollList.taskFn.reinitialise();
+                                    jspScrollList.taskFn.scrollToBottom(0.3);
+                                }, 0);
+                            }
+                        };
+                    });
                 });
-            });
         };
+        // 发送按钮
         $cache.taskSumBtn.on('click', function(e){
             onSendMsg();
         });
+        // 获取摄像头图片按钮
         $cache.taskWebcamBtn.on('click', function(e){
             $.magnificPopup.open({
                 items: {
@@ -305,8 +352,10 @@ define([
             });
             $cache.photoBox.attr('src', cache.webMediaUrl);
         });
+        // 上传本地图片按钮
         $cache.taskUploadBtn.find('input[type="file"]').on('change', function(e){
             var $self,file, blobUrl;
+            var successLoad, loadImg;
             $self = $(this);
             file = e.target.files[0];
             $self.val('');
@@ -315,30 +364,33 @@ define([
                 return false;
             }
             blobUrl = window.URL.createObjectURL(file);
-            loadImage(
-                blobUrl,
-                function(canvas){
-                    $cache.upimgViewBox.html(canvas);
-                    $cache.upimgPop.width(canvas.width + 40);
-                    $.magnificPopup.open({
-                        items:{
-                            src: $cache.upimgPop
-                        },
-                        type: 'inline',
-                        modal: true
-                    });
-                },
-                {
-                    maxWidth: 600,
-                    maxHeight: 600,
-                    canvas: true
-                }
-            );
+            successLoad = function(canvas){
+                $cache.upimgViewBox.html(canvas);
+                $cache.upimgPop.width(canvas.width + 40);
+                $.magnificPopup.open({
+                    items:{
+                        src: $cache.upimgPop
+                    },
+                    type: 'inline',
+                    modal: true
+                });
+            };
+            loadImg = util.loadImg2Canvas(blobUrl, {
+                maxWidth: 600,
+                maxHeight: 600,
+                canvas: true
+            });
+            loadImg
+                .then(successLoad)
+                .done();
         });
+        deferred.resolve();
+        return deferred.promise;
     }
 
     // 初始化富文本编辑器
-    function initUMEditor(callBack){
+    function initUMEditor(){
+        var deferred = Q.defer();
         var umReady = function(stat){
             var umDom = um.container;
             $cache.um = $(umDom);
@@ -356,17 +408,18 @@ define([
             $cache.umTool.append($cache.taskWebcamBtn);
             $cache.umTool.append($cache.taskUploadBtn);
 
-            initUMEditorEvent();
-            if(callBack){
-                callBack();
-            }
+            deferred.resolve();
         };
         var um = UM.getEditor('myEditor');
         um.addListener('ready', umReady);
+
+        return deferred.promise;
     }
 
     // 初始化画板事件
-    function initSketchpadEvent(callBack){
+    function initSketchpadEvent(){
+        var deferred = Q.defer();
+
         var $canvas, myBoard, parentOffset, offsetPoint;
         lockCtl.drawType = 'pen';
         $canvas = $cache.sketchpadFg;
@@ -423,85 +476,123 @@ define([
             }
         });
 
-        //initSketchpadCtl();
-        if(callBack){
-            callBack();
-        }
+        deferred.resolve();
+        return deferred.promise;
     }
 
-    // 初始化画板
-    function initSketchpadBox(imgUrl ,callBack){
-        var loadSuccess;
-        loadSuccess = function(canvas){
-            var Board, canvas2;
-            $cache.sketchpadBg = $(canvas);
-            canvas.className = 'sketchpad-img';
+    // 重设画布
+    function setSketchpadView(bgUrl, fgUrl){
+        var deferred = Q.defer();
 
-            Board = new WSY.hfCanvasBoard({
-                width: canvas.width,
-                height: canvas.height});
-
-            cache.Board = Board;
-
-            canvas2 = Board.getCanvas();
-            $cache.sketchpadFg = $(canvas2);
-
-            canvas2.className = 'sketchpad-img';
-            $cache.sketchpadScroll.height(canvas2.height);
-            $cache.sketchpadScroll.html('');
-            $cache.sketchpadScroll.append(canvas);
-            $cache.sketchpadScroll.append(canvas2);
-
-            jspScrollList.sketchpadFn.reinitialise();
-
-            if(callBack){
-                initSketchpadEvent(callBack);
+        var loadBg, loadFg, onLoadAll, sketchpadReady;
+        sketchpadReady = function(canvasBg){
+            var $canvas = $(canvasBg);
+            canvasBg.className = 'sketchpad-img';
+            if(!$cache.sketchpadBg){
+                $cache.sketchpadScroll.prepend($canvas);
             }else{
-                initSketchpadEvent();
+                $cache.sketchpadBg.replaceWith($canvas);
             }
+            $cache.sketchpadBg = $canvas;
+            $cache.sketchpadScroll.height($cache.sketchpadFg.height());
+            jspScrollList.sketchpadFn.reinitialise();
+            deferred.resolve();
         };
+        if(bgUrl){
+            loadBg = util.loadImg2Canvas(bgUrl);
+        }
 
-        loadImage(
-            imgUrl,
-            function (canvas) {
-                if(canvas.type === 'error') {
-                    console.error('Error loading image :' + canvas.path[0].src);
-                    swal('图片加载错误!', '', 'error');
-                } else {
-                    loadSuccess(canvas);
-                }
-            },
-            {
-                canvas: true
-            }
-        );
-    }
-
-    // 媒体测试
-    function mediaTest(){
-        DetectRTC.load(function(){
-            initElement(function(){
-                $cache.mediaTest.on('contextmenu', function(e){
-                    e.preventDefault();
-                });
-                $cache.mediaTestSuccessBtn.click('click', function(e){
-                    initApp();
-                    $cache.mediaTest.attr('src', '');
-                    $.magnificPopup.close();
-                });
-                $cache.mediaTestErrorBtn.click('click', function(e){
-                    $cache.mediaTestSuccessBtn.hide();
-                    swal('请调整设备, 或联系老师!', '', 'warning');
-                });
-                $.magnificPopup.open({
-                    items: {
-                        src: $cache.testMediaPop
-                    },
-                    type: 'inline',
-                    modal: true
+        if(fgUrl){
+            onLoadAll = WSY.stepFn(['loadBg', 'loadFg'], function(canvasBg, canvasFg){
+                cache.Board.setView({
+                    view: canvasFg
+                }, function(){
+                    sketchpadReady(canvasBg);
                 });
             });
+            loadFg = util.loadImg2Canvas(fgUrl);
+            loadBg
+                .then(function(canvas){
+                    onLoadAll('loadBg', canvas);
+                })
+                .fail(function(err){
+                    console.error(err);
+                })
+                .done();
+            loadFg
+                .then(function(canvas){
+                    onLoadAll('loadFg', canvas);
+                })
+                .fail(function(err){
+                    console.error(err);
+                })
+                .done();
+        }else{
+            loadBg
+                .then(function(canvas){
+                    cache.Board.resizeAndClear({
+                        width: canvas.width,
+                        height: canvas.height
+                    });
+                    sketchpadReady(canvas);
+                })
+                .fail(function(err){
+                    console.error(err);
+                })
+                .done();
+        }
 
+        return deferred.promise;
+    }
+
+    // 初始化画布框
+    function initSketchpadBox(){
+        var deferred = Q.defer();
+        var Board, canvas2;
+        Board = new WSY.hfCanvasBoard({width: 100, height: 100});
+        cache.Board = Board;
+        canvas2 = Board.getCanvas();
+        $cache.sketchpadFg = $(canvas2);
+        canvas2.className = 'sketchpad-img';
+        $cache.sketchpadScroll.height(canvas2.height);
+        $cache.sketchpadScroll.html('');
+        $cache.sketchpadScroll.append(canvas2);
+        jspScrollList.sketchpadFn.reinitialise();
+        Board.onSendBoardData = function(data){console.log(JSON.stringify(data));};
+        deferred.resolve();
+        return deferred.promise;
+    }
+
+    //媒体测试弹窗
+    function mediaTest(){
+        var deferred = Q.defer();
+        $cache.mediaTest.attr('src', cache.webMediaUrl);
+        $cache.mediaTest.on('contextmenu', function(e){
+            e.preventDefault();
+        });
+        $cache.mediaTestSuccessBtn.click('click', function(e){
+            $cache.mediaTest.attr('src', '');
+            $.magnificPopup.close();
+            deferred.resolve();
+        });
+        $cache.mediaTestErrorBtn.click('click', function(e){
+            $cache.mediaTestSuccessBtn.hide();
+            swal('请调整设备, 或联系老师!', '', 'warning');
+        });
+        $.magnificPopup.open({
+            items: {
+                src: $cache.testMediaPop
+            },
+            type: 'inline',
+            modal: true
+        });
+        return deferred.promise;
+    }
+
+    // 初始化媒体测试
+    function detectRTCInit(){
+        var deferred = Q.defer();
+        DetectRTC.load(function(){
             if(!DetectRTC.browser.isChrome){
                 swal('对不起,浏览器版本不兼容!', '请使用Google Chrome浏览器!', 'error');
                 $cache.mediaTestSuccessBtn.hide();
@@ -528,45 +619,124 @@ define([
                     sendMedia = media.clone();
                     webMedia = media.clone();
                     cache.webMediaUrl = URL.createObjectURL(webMedia);
-                    $cache.mediaTest.attr('src', cache.webMediaUrl);
+                    deferred.resolve();
 
                     window.localMedia = localMedia;
                     window.sendMedia = sendMedia;
-
                 }
             });
         });
+        return deferred.promise;
     }
 
-    // 初始化 app
-    function initApp(){
-        initScrollPane(function(){
-            initCtlBtn(function(){
-                initUMEditor(function(){
-                    var imgUrl = './assets/images/width600.png';
-                    initSketchpadBox(imgUrl);
+    // 可拖拽图片放大框
+    function dragImg(){
+        function limtImgSize(){
+            var winImg;
+
+            $cache.winImgZoom
+                .css({
+                    'max-width': cache.winW - 2,
+                    'max-height': cache.winH - 32
                 });
-            });
+            winImg = {
+                left : + $cache.winImg.css('left').split('px')[0],
+                top: + $cache.winImg.css('top').split('px')[0],
+                width: $cache.winImg.width(),
+                height: $cache.winImg.height()
+            };
+
+            if(winImg.left + winImg.width > cache.winW){
+                $cache.winImg.css('left',  cache.winW - winImg.width);
+            }
+            if(winImg.top + winImg.height > cache.winH){
+                $cache.winImg.css('top', cache.winH - winImg.height);
+            }
+        }
+        $cache.win.on('resize', function(){
+            limtImgSize();
         });
+        var draggie = new Draggabilly($cache.winImg.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        draggie = null;
+        limtImgSize();
     }
 
-    //initElement(function(){
-    //    initScrollPane(function(){
-    //        initUMEditor(function(){
-    //            var imgUrl = './assets/images/width600.png';
-    //            initSketchpadBox(imgUrl);
+    // 初始化
+    (function init(){
+        cache.winW = $cache.win.width();
+        cache.winH = $cache.win.height();
+        $cache.win.on('resize', function(){
+            cache.winW = $cache.win.width();
+            cache.winH = $cache.win.height();
+        });
+        detectRTCInit()
+            .then(initElement)
+            .then(DetectRTC)
+            .then(mediaTest)
+            .then(initScrollPane)
+            .then(initCtlBtn)
+            .then(initUMEditor)
+            .then(initUMEditorEvent)
+            .then(initSketchpadBox)
+            .then(initSketchpadEvent)
+            .then(function(){
+                return Q.Promise(function(resolve, reject, notify){
+                    var testImg = './assets/images/width600.png';
+                    setSketchpadView(testImg)
+                        .done(function(){
+                            resolve();
+                        });
+                });
+            })
+            .done(function(){
+                dragImg();
+            });
+    })();
+
+
+    //// object to global debug
+    //window.jspScrollList = jspScrollList;
+    //window.$cache = $cache;
+    //window.cache = cache;
+    //
+    //window.initSketchpadBox = initSketchpadBox;
+    //
+    //window.dataURLtoBlob = dataURLtoBlob;
+    //
+    //// 对话框数据渲染测试
+    //function taskViewTest(){
+    //    var msgs = [
+    //        {type: 'buddy', msg: 'test1'},
+    //        {type: 'self', msg: 'test2'},
+    //        {type: 'buddy', msg: 'test3'},
+    //        {type: 'buddy', msg: 'test4'},
+    //        {type: 'self', msg: 'test5'},
+    //        {type: 'buddy', msg: 'test6'},
+    //        {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
+    //    ];
+    //    renderTaskView(msgs)
+    //        .then(function(data){
+    //            var $imgs, imgLen, loadLen;
+    //            $cache.taskScroll.append(data);
+    //            $imgs = $(data).find('img');
+    //            imgLen = $imgs.size();
+    //            loadLen = 0;
+    //            $imgs.each(function(i ,img){
+    //                img.onload = function(){
+    //                    loadLen +=1;
+    //                    if(imgLen === loadLen){
+    //                        setTimeout(function(){
+    //                            jspScrollList.taskFn.reinitialise();
+    //                            jspScrollList.taskFn.scrollToBottom(0.3);
+    //                        }, 0);
+    //                    }
+    //                };
+    //            });
     //        });
-    //    });
-    //});
-
-    mediaTest();
-
-    // object to global debug
-    window.jspScrollList = jspScrollList;
-    window.$cache = $cache;
-    window.cache = cache;
-
-    window.initSketchpadBox = initSketchpadBox;
-
-    window.dataURLtoBlob = dataURLtoBlob;
+    //}
+    //
+    //window.taskViewTest = taskViewTest;
 });
