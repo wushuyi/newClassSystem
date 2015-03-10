@@ -7,6 +7,8 @@ define([
     'lodashJs',
     'umeditorHf',
     'WSY',
+    'socketIo',
+    'wsy/hf_socket',
     'apps/util/canvas-to-blob',
     'draggabilly',
     'DetectRTC',
@@ -27,6 +29,8 @@ define([
     _,
     UM,
     WSY,
+    socketIo,
+    io,
     dataURLtoBlob,
     Draggabilly
 ){
@@ -42,9 +46,11 @@ define([
         lockCtl = {},
         localMedia,
         webMedia,
-        sendMedia;
+        sendMedia,
+        socket;
 
     $cache.win = $(window);
+    socket = io(socketIo, 'http://192.168.1.77:10010/');
 
     util.loadImg2Canvas = function(imgUrl, options){
         var deferred = Q.defer();
@@ -935,57 +941,66 @@ define([
             .then(initNoFnBtn)
             .done(function(){
                 dragImg();
+                socket.emit('uC', 'reqLogin', {
+                    accessToken: '839e6e96-0063-4251-947a-0cba485436a6'
+                });
+                socket.on('uC.resLogin', function(data){
+                   console.log(data);
+                });
             });
     })();
 
 
-    //// object to global debug
-    //window.jspScrollList = jspScrollList;
-    //window.$cache = $cache;
-    //window.cache = cache;
-    //window.util = util;
-    //
-    //window.testBoard = function(bgUrl, fgUrl){
-    //    //initPlanBox(imgUrl);
-    //    //cache.Board.setBgImg({
-    //    //    image: imgUrl
-    //    //});
-    //    setSketchpadView(bgUrl, fgUrl);
-    //};
-    //
-    //window.dataURLtoBlob = dataURLtoBlob;
-    //
-    //// 对话框数据渲染测试
-    //function taskViewTest(){
-    //    var msgs = [
-    //        {type: 'buddy', msg: 'test1'},
-    //        {type: 'self', msg: 'test2'},
-    //        {type: 'buddy', msg: 'test3'},
-    //        {type: 'buddy', msg: 'test4'},
-    //        {type: 'self', msg: 'test5'},
-    //        {type: 'buddy', msg: 'test6'},
-    //        {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
-    //    ];
-    //    renderTaskView(msgs)
-    //        .then(function(data){
-    //            var $imgs, imgLen, loadLen;
-    //            $cache.taskScroll.append(data);
-    //            $imgs = $(data).find('img');
-    //            imgLen = $imgs.size();
-    //            loadLen = 0;
-    //            $imgs.each(function(i ,img){
-    //                img.onload = function(){
-    //                    loadLen +=1;
-    //                    if(imgLen === loadLen){
-    //                        setTimeout(function(){
-    //                            jspScrollList.taskFn.reinitialise();
-    //                            jspScrollList.taskFn.scrollToBottom(0.3);
-    //                        }, 0);
-    //                    }
-    //                };
-    //            });
-    //        });
-    //}
-    //
-    //window.taskViewTest = taskViewTest;
+    // object to global debug
+    window.socketIo = socketIo;
+    window.io = io;
+    window.socket = socket;
+    window.jspScrollList = jspScrollList;
+    window.$cache = $cache;
+    window.cache = cache;
+    window.util = util;
+
+    window.testBoard = function(bgUrl, fgUrl){
+        //initPlanBox(imgUrl);
+        //cache.Board.setBgImg({
+        //    image: imgUrl
+        //});
+        setSketchpadView(bgUrl, fgUrl);
+    };
+
+    window.dataURLtoBlob = dataURLtoBlob;
+
+    // 对话框数据渲染测试
+    function taskViewTest(){
+        var msgs = [
+            {type: 'buddy', msg: 'test1'},
+            {type: 'self', msg: 'test2'},
+            {type: 'buddy', msg: 'test3'},
+            {type: 'buddy', msg: 'test4'},
+            {type: 'self', msg: 'test5'},
+            {type: 'buddy', msg: 'test6'},
+            {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
+        ];
+        renderTaskView(msgs)
+            .then(function(data){
+                var $imgs, imgLen, loadLen;
+                $cache.taskScroll.append(data);
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function(i ,img){
+                    img.onload = function(){
+                        loadLen +=1;
+                        if(imgLen === loadLen){
+                            setTimeout(function(){
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
+            });
+    }
+
+    window.taskViewTest = taskViewTest;
 });
