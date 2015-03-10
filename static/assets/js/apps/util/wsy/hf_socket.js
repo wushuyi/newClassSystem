@@ -37,8 +37,16 @@ define([
                 });
             };
 
-            mySocket.emit = function(namespace, type, data){
-                socket.emit('onData', {type: namespace, code: type, data: data});
+            mySocket.emit = function(name, data){
+                var nameSplit,namespace,type;
+                nameSplit = name.split('.');
+                if(nameSplit.length === 2){
+                    namespace = nameSplit[0];
+                    type = nameSplit[1];
+                    socket.emit('onData', {type: namespace, code: type, data: data});
+                }else{
+                    socket.emit('onData', {code: name, data: data});
+                }
             };
 
             for(var i = 0, len = events.length; i < len; i++){
@@ -48,7 +56,19 @@ define([
 
             socket.once('connect', function(){
                 socket.on('onData', function(data){
-                    var emitName = data.type + '.' +data.code;
+                    var emitName;
+                    if(data.type){
+                        emitName = data.type + '.' + data.code;
+                    }else{
+                        emitName = data.code;
+                    }
+                    if(!data.success){
+                        mySocket._emit('error', {
+                            emit: emitName,
+                            info: data.info
+                        });
+                        return;
+                    }
                     console.log(emitName);
                     if(!data.result){
                         mySocket._emit(emitName);
