@@ -27,12 +27,12 @@ define([
             mySocket._emit = mySocket.emit;
 
             bindFn = function(event){
-                socket.on(event, function(){  //console.log([
-                    //    event,
-                    //    arguments
-                    //]);
-
-                    console.log(mySocket);
+                socket.on(event, function(){
+                    console.log([
+                        event,
+                        arguments
+                    ]);
+                    //console.log(mySocket);
                     mySocket._emit(event, arguments);
                 });
             };
@@ -69,11 +69,11 @@ define([
                         });
                         return;
                     }
-                    console.log(emitName);
+                    //console.log(emitName);
                     if(!data.result){
                         mySocket._emit(emitName);
                     }else{
-                        mySocket._emit(emitName);
+                        mySocket._emit(emitName, data.result);
                     }
                 });
             });

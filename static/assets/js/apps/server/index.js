@@ -47,10 +47,11 @@ define([
         localMedia,
         webMedia,
         sendMedia,
-        socket;
+        socket,
+        transport = {},
+        dataCache = {};
 
     $cache.win = $(window);
-    socket = io(socketIo, 'http://192.168.1.77:10010/');
 
     util.loadImg2Canvas = function(imgUrl, options){
         var deferred = Q.defer();
@@ -205,6 +206,7 @@ define([
         return deferred.promise;
     }
 
+    // 初始化控制按钮事件
     function initCtlBtn(){
         var deferred = Q.defer();
         var preventDefault;
@@ -416,6 +418,7 @@ define([
         return deferred.promise;
     }
 
+    // 对没有功能的按钮 做提示处理
     function initNoFnBtn(){
         var deferred = Q.defer();
         var onNoFn;
@@ -431,6 +434,7 @@ define([
         deferred.resolve();
         return deferred.promise;
     }
+
     // 对话框数据渲染
     function renderTaskView(msgs){
         var deferred = Q.defer();
@@ -908,6 +912,61 @@ define([
         limtImgSize();
     }
 
+    // 初始化 websocket 连接
+    function initSocekt(){
+        var deferred = Q.defer();
+        socket = io(socketIo, 'http://192.168.1.77:10010/');
+        socket.once('connect', function(){
+            socket.on('error', function(data){
+                swal('服务器出现错误!', data.emit + ': ' + data.info, 'error');
+            });
+            deferred.resolve();
+        });
+        return deferred.promise;
+    }
+
+    function initTransport(){
+
+        transport.login = function (){
+            var deferred = Q.defer();
+            socket.emit('uC.reqLogin', {
+                accessToken: '839e6e96-0063-4251-947a-0cba485436a6'
+            });
+            socket.on('uC.resLogin', function(data){
+                if(data.status !== 'success'){
+                    deferred.reject();
+                    swal('服务器链接错误!', '', 'error');
+                }else{
+                    deferred.resolve();
+                }
+            });
+            return deferred.promise;
+        };
+
+        transport.getUserId = function(){
+            var deferred = Q.defer();
+            socket.emit('uC.reqGetUserId');
+            socket.on('uC.resGetUserId', function(data){
+                dataCache.myUserId = data;
+                deferred.resolve(data);
+            });
+            return deferred.promise;
+        };
+
+        transport.getUserInfo = function(userId){
+            var deferred = Q.defer();
+
+            socket.emit('uC.reqGetUserInfo', {
+                userId: userId
+            });
+            socket.on('uC.resGetUserInfo', function(data){
+                dataCache.myUserInfo = data;
+                deferred.resolve(data);
+            });
+            return deferred.promise;
+        };
+    }
+
     // 初始化
     (function init(){
         cache.winW = $cache.win.width();
@@ -916,11 +975,11 @@ define([
             cache.winW = $cache.win.width();
             cache.winH = $cache.win.height();
         });
-        detectRTCInit()
-            .then(initElement)
-            .then(DetectRTC)
-            .then(mediaTest)
-        //initElement()
+        //detectRTCInit()
+        //    .then(initElement)
+        //    .then(DetectRTC)
+        //    .then(mediaTest)
+        initElement()
             .then(initScrollPane)
             .then(initCtlBtn)
             .then(initUMEditor)
@@ -928,6 +987,22 @@ define([
             .then(initSketchpadBox)
             .then(initSketchpadEvent)
             .then(initSketchpadCtl)
+            .then(initSocekt)
+            .then(initTransport)
+            .then(function(){
+                return Q.Promise(function(resolve, reject, notify){
+                    transport.login()
+                        .then(transport.getUserId)
+                        .then(function(data){
+                            console.log(data);
+                            transport.getUserInfo(dataCache.myUserId)
+                                .then(function(data){
+                                    console.log(data);
+                                });
+                        });
+                    resolve();
+                });
+            })
             .then(function(){
                 return Q.Promise(function(resolve, reject, notify){
                     var testImg = './assets/images/width600.png';
@@ -939,15 +1014,7 @@ define([
                 });
             })
             .then(initNoFnBtn)
-            .done(function(){
-                dragImg();
-                socket.emit('uC', 'reqLogin', {
-                    accessToken: '839e6e96-0063-4251-947a-0cba485436a6'
-                });
-                socket.on('uC.resLogin', function(data){
-                   console.log(data);
-                });
-            });
+            .done();
     })();
 
 
@@ -959,6 +1026,7 @@ define([
     window.$cache = $cache;
     window.cache = cache;
     window.util = util;
+    window.dataCache = dataCache;
 
     window.testBoard = function(bgUrl, fgUrl){
         //initPlanBox(imgUrl);
