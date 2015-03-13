@@ -77,6 +77,38 @@ define([
         return deferred.promise;
     };
 
+    util.taskSendMsg = function(data){
+        var htmlCent, msg;
+        htmlCent = data
+        if(!htmlCent.length){
+            return false;
+        }
+        $cache.umMsgBox.html('');
+        msg = {type: 'self', msg: htmlCent};
+        cache.taskMsg.push(msg);
+
+        renderTaskView([msg])
+            .then(function(data){
+                var $imgs, imgLen, loadLen;
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function(i ,img){
+                    console.log(img);
+                    img.onload = function(){
+                        loadLen +=1;
+                        if(imgLen === loadLen){
+                            $cache.taskScroll.append(data);
+                            setTimeout(function(){
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
+            });
+    };
+
     // 初始化dom选择缓存
     function initElement(){
         var deferred = Q.defer();
@@ -304,15 +336,9 @@ define([
             $cache.photoBox.attr('src', '');
         });
         $cache.photoConfirmBtn.on('click', function(e){
-            var videoEl, videoW, videoH, canvasEl, base64Img;
+            var videoEl;
             videoEl = $cache.photoBox.get(0);
-            videoW = $cache.photoBox.width();
-            videoH = $cache.photoBox.height();
             videoEl.pause();
-            canvasEl = new WSY.CanvasBuffer(videoW, videoH);
-            canvasEl.context.drawImage(videoEl, 0, 0, videoW, videoH);
-            base64Img = canvasEl.canvas.toDataURL();
-            cache.photoBase64Img = base64Img;
             $cache.photoCancelBtn.hide();
             $cache.photoConfirmBtn.hide();
             $cache.photoResetBtn.show();
@@ -328,13 +354,35 @@ define([
             $cache.photoUploadBtn.hide();
         });
         $cache.photoUploadBtn.on('click', function(e){
-            console.log(cache.photoBase64Img);
-            $.magnificPopup.close();
-            $cache.photoBox.attr('src', '');
-            $cache.photoCancelBtn.show();
-            $cache.photoConfirmBtn.show();
-            $cache.photoResetBtn.hide();
-            $cache.photoUploadBtn.hide();
+            var videoEl, videoW, videoH, canvasBuffer, uploadSuccess;
+            uploadSuccess = function (){
+                $.magnificPopup.close();
+                $cache.photoBox.attr('src', '');
+                $cache.photoCancelBtn.show();
+                $cache.photoConfirmBtn.show();
+                $cache.photoResetBtn.hide();
+                $cache.photoUploadBtn.hide();
+            };
+
+            videoEl = $cache.photoBox.get(0);
+            videoW = $cache.photoBox.width();
+            videoH = $cache.photoBox.height();
+            canvasBuffer = new WSY.CanvasBuffer(videoW, videoH);
+            canvasBuffer.context.drawImage(videoEl, 0, 0, videoW, videoH);
+            cache.photoBlobImg = canvasBuffer.canvas.toBlob(function(blob){
+                uploadBlobToQN(blob)
+                    .then(function(data){
+                        var htmlCent = '<img class="input-img" ' +
+                            'src="http://hyphen.qiniudn.com/'+data.key+'">';
+                        util.taskSendMsg(htmlCent);
+                        uploadSuccess();
+                    },function(){
+                        console.log(arguments);
+                    },function(progress){
+                        console.log(progress);
+                    });
+            });
+
         });
         // 获取摄像头图片上传 end
 
@@ -346,7 +394,9 @@ define([
                 console.log(blob);
                 uploadBlobToQN(blob)
                     .then(function(data){
-                        console.log(data);
+                        var htmlCent = '<img class="input-img" ' +
+                            'src="http://hyphen.qiniudn.com/'+data.key+'">';
+                        util.taskSendMsg(htmlCent);
                         $.magnificPopup.close();
                     },function(){
                         console.log(arguments);
@@ -553,46 +603,16 @@ define([
     function initUMEditorEvent(){
         var deferred = Q.defer();
 
-        var onSendMsg;
         cache.taskMsg = [];
 
         // fix bug send none msg
         $cache.umMsgBox.html('');
 
-        onSendMsg = function(){
-            var cent, msg;
-            cent = $cache.umMsgBox.html();
-            if(!cent.length){
-                return false;
-            }
-            $cache.umMsgBox.html('');
-            msg = {type: 'self', msg: cent};
-            cache.taskMsg.push(msg);
 
-            renderTaskView([msg])
-                .then(function(data){
-                    var $imgs, imgLen, loadLen;
-                    $imgs = $(data).find('img');
-                    imgLen = $imgs.size();
-                    loadLen = 0;
-                    $imgs.each(function(i ,img){
-                        console.log(img);
-                        img.onload = function(){
-                            loadLen +=1;
-                            if(imgLen === loadLen){
-                                $cache.taskScroll.append(data);
-                                setTimeout(function(){
-                                    jspScrollList.taskFn.reinitialise();
-                                    jspScrollList.taskFn.scrollToBottom(0.3);
-                                }, 0);
-                            }
-                        };
-                    });
-                });
-        };
         // 发送按钮
         $cache.taskSumBtn.on('click', function(e){
-            onSendMsg();
+            var htmlCent = $cache.umMsgBox.html();
+            util.taskSendMsg(htmlCent);
         });
         // 获取摄像头图片按钮
         $cache.taskWebcamBtn.on('click', function(e){
@@ -1196,11 +1216,11 @@ define([
             cache.winW = $cache.win.width();
             cache.winH = $cache.win.height();
         });
-        //detectRTCInit()
-        //    .then(initElement)
-        //    .then(DetectRTC)
-        //    .then(mediaTest)
-        initElement()
+        detectRTCInit()
+            .then(initElement)
+            .then(DetectRTC)
+            .then(mediaTest)
+        //initElement()
             .then(initScrollPane)
             .then(initCtlBtn)
             .then(initUMEditor)
