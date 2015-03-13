@@ -248,6 +248,10 @@
   display: none;
   box-shadow: #D9D9D9 0px 0px 6px;
 }
+#left-cent .session-cent .scroll,
+#right-cent .session-cent .scroll {
+  width: 426px;
+}
 #left-cent .session-cent:before,
 #right-cent .session-cent:before {
   content: "";

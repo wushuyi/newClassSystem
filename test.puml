@@ -1,0 +1,12 @@
+@startuml
+ (*) --> "开始"
+ note right: 验证用户
+ if "图书?" then
+  -->[是] "下一个验证"
+  --> "结束"
+  -right-> (*)
+ else
+  ->[否] "改变验证"
+  -->[后端处理] (*)
+ endif
+@enduml

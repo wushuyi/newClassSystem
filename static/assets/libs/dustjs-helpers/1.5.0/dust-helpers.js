@@ -531,4 +531,4 @@ var helpers = {
     module.exports = dust;
   }
 
-})(typeof exports !== 'undefined' ? require('dustjs-linkedin') : dust);
+})(typeof exports !== 'undefined' ? require('dust') : dust);

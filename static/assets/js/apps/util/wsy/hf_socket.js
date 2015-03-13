@@ -62,6 +62,7 @@ define([
                     }else{
                         emitName = data.code;
                     }
+                    console.log(emitName);
                     if(!data.success){
                         mySocket._emit('error', {
                             emit: emitName,

@@ -817,3 +817,106 @@ input[type="submit"].btn.btn-mini {
     text-align: center;
   }
 }
+
+.session-cent {
+  position: absolute;
+  width: 429px;
+  height: 270px;
+  bottom: 68px;
+  right: 36px;
+  background: #FFFFFF;
+  border: 1px solid #D9D9D9;
+  box-shadow: #D9D9D9 0px 0px 6px;
+  display: none;
+  .scroll-cent {
+    width: 429px;
+    height: 270px;
+  }
+  .scroll{
+    width: 426px;
+  }
+  &:before {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    position: absolute;
+    bottom: -10px;
+    right: 20px;
+    border-top: 10px solid #D9D9D9;
+    border-right: 16px solid transparent;
+    border-left: 16px solid transparent;
+    z-index: 9999;
+  }
+  &:after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    position: absolute;
+    bottom: -8px;
+    right: 20px;
+    border-top: 10px solid #FFFFFF;
+    border-right: 16px solid transparent;
+    border-left: 16px solid transparent;
+    z-index: 9999;
+  }
+  .list {
+    //          background: red;
+    float: left;
+    width: 426px;
+    padding-top: 16px;
+    padding-bottom: 10px;
+    position: relative;
+    &:after {
+      content: "";
+      display: block;
+      height: 1px;
+      position: absolute;
+      bottom: 0;
+      left: 24px;
+      right: 24px;
+      background: #E6E6E6;
+    }
+    &:last-of-type:after {
+      display: none;
+    }
+    .class-name {
+      float: left;
+      width: 100px;
+      line-height: 36px;
+      text-align: center;
+//      margin-top: 24px;
+      margin-left: 30px;
+      font-size: 16px;
+      color: #3498DB;
+      //            cursor: pointer;
+    }
+    .class-list {
+      //            background: red;
+      width: 280px;
+      float: right;
+      //margin-right: 26px;
+      li {
+        float: left;
+        width: 28px;
+        height: 28px;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        margin: 8px;
+        //              background: yellow;
+        text-align: center;
+        font-size: 16px;
+        line-height: 26px;
+        cursor: pointer;
+        &:hover {
+          border: 1px solid #3498DB;
+        }
+        &.action {
+          border: 1px solid #3498DB;
+        }
+      }
+    }
+
+  }
+}

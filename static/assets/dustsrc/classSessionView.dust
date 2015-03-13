@@ -1,0 +1,13 @@
+{# quizIdListResults}
+<li class="list session-list">
+    <span class="class-name" data-knowledgeId="{knowledgeId}">{knowledgeName}</span>
+
+    <div class="class-list">
+        <ul>
+            {# quizIds}
+            <li class="quiz" data-quizid="{quizId}">{index}</li>
+            {/ quizIds}
+        </ul>
+    </div>
+</li>
+{/ quizIdListResults}

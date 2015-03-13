@@ -8,8 +8,7 @@ requirejs.config({
     paths: {
         apps: 'js/apps',
         base64: 'libs/base64/0.3.0/base64',
-        dustHelpers: 'libs/dustjs-helpers/1.5.0/dust-helpers',
-        dust: 'libs/dustjs-linkedin/2.5.1/dust-full',
+        'dust': 'libs/dustjs-linkedin/2.5.1/dust-core',
 
         jquery: 'libs/jquery/1.11.2/jquery',
         jqueryRaty: 'libs/jquery.raty/2.7.0/jquery.raty',

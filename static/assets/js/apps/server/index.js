@@ -14,6 +14,7 @@ define([
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
+    'dust-temp/classSessionView',
     'wsy/get_offset_point',
     'wsy/hf_canvas_board',
     'wsy/canvas_buff',
@@ -52,6 +53,9 @@ define([
         dataCache = {};
 
     $cache.win = $(window);
+    dataCache.quizIdIndex = 0;
+    dataCache.quizIdListForServe = null;
+    dataCache.quizIdList = [];
 
     util.loadImg2Canvas = function(imgUrl, options){
         var deferred = Q.defer();
@@ -89,6 +93,9 @@ define([
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
         $cache.rightSessionCent = $cache.rightCent.find('.session-cent');
+
+        $cache.rightSessionScrollCent = $cache.rightSessionCent.find('.scroll-cent');
+        $cache.rightSessionScroll = $cache.rightSessionCent.find('.scroll');
 
         $cache.answerLock = $('#answer-lock');
 
@@ -201,6 +208,10 @@ define([
         jspScrollList.ratyFn = $cache.ratyPopScroll.jScrollPane({
             hideFocus: true
         }).data('jsp');
+        jspScrollList.rightSessionFn = $cache.rightSessionScrollCent.jScrollPane({
+            hideFocus: true
+        }).data('jsp');
+
 
         deferred.resolve();
         return deferred.promise;
@@ -332,9 +343,16 @@ define([
             var canvas;
             canvas = $cache.upimgViewBox.find('canvas').get(0);
             canvas.toBlob(function(blob){
-               //console.log(blob);
-                // wait add code...
-                $.magnificPopup.close();
+                console.log(blob);
+                uploadBlobToQN(blob)
+                    .then(function(data){
+                        console.log(data);
+                        $.magnificPopup.close();
+                    },function(){
+                        console.log(arguments);
+                    },function(progress){
+                        console.log(progress);
+                    });
             });
         });
         $cache.upimgCancelBtn.on('click', function(e){
@@ -392,6 +410,7 @@ define([
             }else{
                 $cache.rightSessionCent.show();
                 lockCtl.rightSessionCent = true;
+                jspScrollList.rightSessionFn.reinitialise();
             }
         });
         // 控制按钮 end
@@ -413,6 +432,14 @@ define([
             e.preventDefault();
         });
         // 聊天框图片查看 end
+
+        // 点击上课听题目 start
+        $cache.rightSessionScroll.on('click', 'li.quiz', function(e){
+            var $self = $(this);
+            var quizId = $self.data('quizid');
+            initQuiz(quizId);
+        });
+        // 点击上课听题目 end
 
         deferred.resolve();
         return deferred.promise;
@@ -470,6 +497,57 @@ define([
 
         return deferred.promise;
     }
+
+    // 上课试题数据渲染
+    function renderClassSessionView(data){
+        var deferred = Q.defer();
+        if(!dataCache.quizIdListForServe){
+            dataCache.quizIdListForServe = data;
+        }
+        for(var i = 0, len = data.quizIdListResults.length; i < len; i++){
+            var result =  data.quizIdListResults[i];
+            var quizIdsList = result.quizIds;
+            var reQuizIdsList = [];
+            //console.log(result);
+            for(var j = 0, jlen = quizIdsList.length; j < jlen; j++){
+                var quizId = quizIdsList[j];
+                var listObj = {
+                    index: dataCache.quizIdIndex += 1,
+                    quizId: quizId
+                };
+                reQuizIdsList.push(listObj);
+                dataCache.quizIdList.push(listObj);
+            }
+            result.quizIds = reQuizIdsList;
+        }
+        dust.render('classSessionView', data, function(err, out){
+            if(err){
+                deferred.reject(err);
+            }else{
+                deferred.resolve(out);
+            }
+        });
+        return deferred.promise;
+    }
+
+    // 上课试题数据UI输出
+    function showClassSessionView(data){
+        var deferred = Q.defer();
+        renderClassSessionView(data).then(function(data){
+            $cache.rightSessionScroll.find('.session-list').remove();
+            $cache.rightSessionScroll.find('> ul').prepend(data);
+            jspScrollList.rightSessionFn.reinitialise();
+            deferred.resolve();
+        });
+        return deferred.promise;
+    }
+
+    window.testView = function(){
+        var data = '{"quizIdListResults":[{"knowledgeId":"92","knowledgeName":"短语类型判定","quizIds":[1512]},{"knowledgeId":"130","knowledgeName":"社科文标题的含义同步","quizIds":[9782,9783]},{"knowledgeId":"133","knowledgeName":"社科文词语含义提高","quizIds":[5449,5450]}]}';
+        data = JSON.parse(data);
+        //console.log(data);
+        showClassSessionView(data);
+    };
 
     // 富文本编辑器初始化事件
     function initUMEditorEvent(){
@@ -775,6 +853,22 @@ define([
         return deferred.promise;
     }
 
+    // 通过数据切换题目
+    function initQuiz(quizId){
+        var deferred = Q.defer();
+        console.log(quizId);
+        transport.getQuizInfoById(quizId)
+            .then(function(data){
+                console.log(data);
+                setPlanBox(data.teacherUrl);
+                setSketchpadView(data.studentUrl)
+                    .done(function(){
+                        deferred.resolve();
+                    });
+            });
+        return deferred.promise;
+    }
+
     // 初始化画布框
     function initSketchpadBox(){
         var deferred = Q.defer();
@@ -788,7 +882,6 @@ define([
         $cache.sketchpadScroll.html('');
         $cache.sketchpadScroll.append(canvas2);
         jspScrollList.sketchpadFn.reinitialise();
-        Board.onSendBoardData = function(data){console.log(JSON.stringify(data));};
         deferred.resolve();
         return deferred.promise;
     }
@@ -814,6 +907,9 @@ define([
     //媒体测试弹窗
     function mediaTest(){
         var deferred = Q.defer();
+        $cache.mediaTest.on('loadeddata', function(){
+            $cache.mediaTest.get(0).play();
+        });
         $cache.mediaTest.attr('src', cache.webMediaUrl);
         $cache.mediaTest.on('contextmenu', function(e){
             e.preventDefault();
@@ -925,47 +1021,172 @@ define([
         return deferred.promise;
     }
 
+    // 初始化交互接口
     function initTransport(){
-
+        var accessToken;
+        if(location.pathname.indexOf('server1.html') !== -1){
+            accessToken = '74a0582e-aa6f-46b5-ba4d-3a0f2318d347';
+        }else{
+            accessToken = 'd2385444-c407-4c0a-986b-51d908057172';
+        }
         transport.login = function (){
             var deferred = Q.defer();
-            socket.emit('uC.reqLogin', {
-                accessToken: '839e6e96-0063-4251-947a-0cba485436a6'
-            });
-            socket.on('uC.resLogin', function(data){
+            socket.once('uC.resLogin', function(data){
                 if(data.status !== 'success'){
                     deferred.reject();
-                    swal('服务器链接错误!', '', 'error');
                 }else{
                     deferred.resolve();
                 }
+            });
+            socket.emit('uC.reqLogin', {
+                accessToken: accessToken
             });
             return deferred.promise;
         };
 
         transport.getUserId = function(){
             var deferred = Q.defer();
-            socket.emit('uC.reqGetUserId');
-            socket.on('uC.resGetUserId', function(data){
-                dataCache.myUserId = data;
+            socket.once('uC.resGetUserId', function(data){
                 deferred.resolve(data);
             });
+            socket.emit('uC.reqGetUserId');
             return deferred.promise;
         };
 
         transport.getUserInfo = function(userId){
             var deferred = Q.defer();
-
+            socket.once('uC.resGetUserInfo', function(data){
+                deferred.resolve(data);
+            });
             socket.emit('uC.reqGetUserInfo', {
                 userId: userId
             });
-            socket.on('uC.resGetUserInfo', function(data){
-                dataCache.myUserInfo = data;
+            return deferred.promise;
+        };
+        transport.inRoom = function(){
+            var deferred = Q.defer();
+            socket.once('uC.resInRoom', function(data){
+                if(data.status !== 'success'){
+                    deferred.reject();
+                }else{
+                    deferred.resolve();
+                }
+            });
+            socket.emit('uC.reqInRoom');
+            return deferred.promise;
+        };
+        transport.classList = function(){
+            var deferred = Q.defer();
+            socket.once('qC.resClassList', function(data){
                 deferred.resolve(data);
+            });
+            socket.emit('qC.reqClassList');
+            return deferred.promise;
+        };
+        transport.getQuizInfoById = function(quizId){
+            var deferred = Q.defer();
+            socket.once('qC.resGetQuizInfoById', function(data){
+                deferred.resolve(data);
+            });
+            socket.emit('qC.reqGetQuizInfoById',{
+                quizId: quizId
             });
             return deferred.promise;
         };
+        transport.upLoadToken = function(){
+            var deferred = Q.defer();
+            console.log('run');
+            socket.once('dHC.resUploadToken', function(data){
+                deferred.resolve(data);
+            });
+            socket.emit('dHC.reqUploadToken');
+            return deferred.promise;
+        };
     }
+
+    // 对交互接口的逻辑处理
+    function processTransport(){
+        var deferred = Q.defer();
+        transport.login()
+            .then(transport.getUserId, function(){
+                swal('服务器链接错误!', '', 'error');
+            })
+            .then(function(data){
+                dataCache.selfUserId = data;
+            })
+            .then(function(){
+                return Q.Promise(function(resolve, reject, notify){
+                    transport.getUserInfo(dataCache.selfUserId)
+                        .then(function(data){
+                            dataCache.selfUserInfo = data;
+                            resolve();
+                        });
+                });
+            })
+            .then(transport.inRoom)
+            .then(function(){
+                transport.classList()
+                    .then(function(data){
+                      showClassSessionView(data)
+                          .then(function(){
+                              deferred.resolve();
+                      });
+                });
+            });
+
+        return deferred.promise;
+    }
+
+    // 上传二进制对象到七牛
+    function uploadBlobToQN(blob){
+        var deferred = Q.defer();
+        transport.upLoadToken()
+            .then(function(data){
+                console.log(data);
+                var token,key,form;
+
+                token = data.token;
+                key = data.key;
+                form = new FormData();
+
+                form.append('file', blob, key);
+                form.append('token', token);
+
+                $.ajax({
+                    url: 'http://upload.qiniu.com/',
+                    type: 'POST',
+                    data: form,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    forceSync: false,
+                    xhr: function(){
+                        var xhrobj = $.ajaxSettings.xhr();
+                        if(xhrobj.upload){
+                            xhrobj.upload.addEventListener('progress', function(ev) {
+                                var percent = 0;
+                                var position = ev.loaded || ev.position;
+                                var total = ev.total || e.totalSize;
+                                if(ev.lengthComputable){
+                                    percent = Math.ceil(position / total * 100);
+                                }
+                                console.log(percent);
+                                deferred.notify(percent);
+                            }, false);
+                        }
+                        return xhrobj;
+                    },
+                    success: function(data){
+                        deferred.resolve(data);
+                    },
+                    error: function(){
+                        deferred.reject(arguments);
+                    }
+                });
+            });
+        return deferred.promise;
+    }
+
 
     // 初始化
     (function init(){
@@ -989,33 +1210,25 @@ define([
             .then(initSketchpadCtl)
             .then(initSocekt)
             .then(initTransport)
+            .then(processTransport)
             .then(function(){
                 return Q.Promise(function(resolve, reject, notify){
-                    transport.login()
-                        .then(transport.getUserId)
-                        .then(function(data){
-                            console.log(data);
-                            transport.getUserInfo(dataCache.myUserId)
-                                .then(function(data){
-                                    console.log(data);
-                                });
-                        });
-                    resolve();
-                });
-            })
-            .then(function(){
-                return Q.Promise(function(resolve, reject, notify){
-                    var testImg = './assets/images/width600.png';
-                    setPlanBox(testImg);
-                    setSketchpadView(testImg)
-                        .done(function(){
+                    var quizInitData = dataCache.quizIdList[0];
+                    initQuiz(quizInitData.quizId)
+                        .then(function(){
                             resolve();
                         });
                 });
             })
             .then(initNoFnBtn)
-            .done();
+            .done(function(){
+                dragImg();
+                test();
+            });
     })();
+
+
+    function test(){
 
 
     // object to global debug
@@ -1071,4 +1284,6 @@ define([
     }
 
     window.taskViewTest = taskViewTest;
+
+    }
 });
