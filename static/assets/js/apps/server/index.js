@@ -55,9 +55,6 @@ define([
         jspScrollList = {},
         timerList = {},
         lockCtl = {},
-        localMedia,
-        webMedia,
-        sendMedia,
         socket,
         transport = {},
         dataCache = {};
@@ -1040,14 +1037,10 @@ define([
             }
             getUserMedia({
                 onsuccess: function (media) {
-                    localMedia = media;
-                    sendMedia = media.clone();
-                    webMedia = media.clone();
-                    cache.webMediaUrl = URL.createObjectURL(webMedia);
+                    cache.localMedia = media;
+                    cache.cloneMedia = media.clone();
+                    cache.webMediaUrl = URL.createObjectURL(cache.cloneMedia);
                     deferred.resolve();
-
-                    window.localMedia = localMedia;
-                    window.sendMedia = sendMedia;
                 }
             });
         });
