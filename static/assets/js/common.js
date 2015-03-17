@@ -31,7 +31,8 @@ requirejs.config({
         RTCPeerConnection: 'js/apps/util/RTCPeerConnection-v1.5',
         loadImageAll: 'js/apps/util/load-image-all',
         draggabilly: 'libs/draggabilly/1.1.2/draggabilly.pkgd',
-        qjs: 'libs/q.js/2.0.3/q'
+        qjs: 'libs/q.js/2.0.3/q',
+        async: 'libs/async/1.22/async.min'
     },
     shim: {
         modernizr: {

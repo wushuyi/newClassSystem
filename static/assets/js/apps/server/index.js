@@ -41,8 +41,16 @@ define([
 
     var URL = window.URL;
 
-    var util = {},
-        $cache = {},
+    var modelGCtl ={},
+        modelUtil ={},
+        modelDom ={},
+        modelTask = {},
+        modelBoard = {},
+        modelRtc = {},
+        modelClass = {},
+        modelSocket = {};
+
+    var $cache = {},
         cache = {},
         jspScrollList = {},
         timerList = {},
@@ -54,15 +62,19 @@ define([
         transport = {},
         dataCache = {};
 
-    $cache.win = $(window);
-    dataCache.quizIdIndex = 0;
-    dataCache.quizIdListForServe = null;
-    dataCache.quizIdList = [];
-    dataCache.userInfo = {};
-    dataCache.nowQuiz = {};
-    dataCache.taskMsg = [];
+    // 初始化全局缓存
+    modelGCtl.init = function(){
+        $cache.win = $(window);
+        dataCache.quizIdIndex = 0;
+        dataCache.quizIdListForServe = null;
+        dataCache.quizIdList = [];
+        dataCache.userInfo = {};
+        dataCache.nowQuiz = {};
+        dataCache.taskMsg = [];
+    };
 
-    util.loadImg2Canvas = function (imgUrl, options) {
+    // 加载图片返回Canvas
+    modelUtil.loadImg2Canvas = function (imgUrl, options) {
         var deferred = Q.defer();
         options = options ? options : {
             canvas: true
@@ -82,51 +94,8 @@ define([
         return deferred.promise;
     };
 
-    util.taskSendMsg = function (data, callback) {
-        var htmlCent, msg;
-        htmlCent = data;
-        if (!htmlCent.length) {
-            return false;
-        }
-        $cache.umMsgBox.html('');
-
-        msg = {userId: dataCache.selfUserId, content: htmlCent};
-        socket.emit('mFC.reqChatMessages', msg);
-        dataCache.taskMsg.push(msg);
-        callback(msg);
-    };
-
-    function renderTaskViewHtml(data) {
-        var msg;
-        if ($.isArray(data)) {
-            msg = data;
-        } else {
-            msg = [data];
-        }
-        renderTaskView(msg)
-            .then(function (data) {
-                var $imgs, imgLen, loadLen;
-                $imgs = $(data).find('img');
-                imgLen = $imgs.size();
-                loadLen = 0;
-                $imgs.each(function (i, img) {
-                    console.log(img);
-                    img.onload = function () {
-                        loadLen += 1;
-                        if (imgLen === loadLen) {
-                            $cache.taskScroll.append(data);
-                            setTimeout(function () {
-                                jspScrollList.taskFn.reinitialise();
-                                jspScrollList.taskFn.scrollToBottom(0.3);
-                            }, 0);
-                        }
-                    };
-                });
-            });
-    }
-
     // 初始化dom选择缓存
-    function initElement() {
+    modelDom.initElement = function() {
         var deferred = Q.defer();
 
         $cache.wrapper = $('#wrapper');
@@ -217,10 +186,10 @@ define([
 
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 初始化滚动条
-    function initScrollPane() {
+    modelDom.initScrollPane = function(){
         var deferred = Q.defer();
 
         $cache.win.on('resize', function () {
@@ -263,10 +232,10 @@ define([
 
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 初始化控制按钮事件
-    function initCtlBtn() {
+    modelDom.initCtlBtn = function () {
         var deferred = Q.defer();
         var preventDefault;
         // 阻止默认事件 start
@@ -386,11 +355,10 @@ define([
             canvasBuffer = new WSY.CanvasBuffer(videoW, videoH);
             canvasBuffer.context.drawImage(videoEl, 0, 0, videoW, videoH);
             cache.photoBlobImg = canvasBuffer.canvas.toBlob(function (blob) {
-                uploadBlobToQN(blob)
-                    .then(function (data) {
-                        var htmlCent = '<img class="input-img" ' +
-                            'src="http://hyphen.qiniudn.com/' + data.key + '">';
-                        util.taskSendMsg(htmlCent, renderTaskViewHtml);
+                modelSocket.uploadBlobToQN(blob)
+                    .then(function (imgSrc) {
+                        var htmlCent = '<img class="input-img" src="' + imgSrc + '">';
+                        modelTask.onSendMsg(htmlCent, modelTask.onRenderTaskView);
                         uploadSuccess();
                     }, function () {
                         console.log(arguments);
@@ -408,11 +376,10 @@ define([
             canvas = $cache.upimgViewBox.find('canvas').get(0);
             canvas.toBlob(function (blob) {
                 console.log(blob);
-                uploadBlobToQN(blob)
-                    .then(function (data) {
-                        var htmlCent = '<img class="input-img" ' +
-                            'src="http://hyphen.qiniudn.com/' + data.key + '">';
-                        util.taskSendMsg(htmlCent, renderTaskViewHtml);
+                modelSocket.uploadBlobToQN(blob)
+                    .then(function (imgSrc) {
+                        var htmlCent = '<img class="input-img" src="' + imgSrc + '">';
+                        modelTask.onSendMsg(htmlCent, modelTask.onRenderTaskView);
                         $.magnificPopup.close();
                     }, function () {
                         console.log(arguments);
@@ -504,17 +471,17 @@ define([
             var $self = $(this);
             var quizData = $self.data();
             dataCache.nowQuiz.quizId = quizData.quizId;
-            initQuiz(dataCache.nowQuiz.quizId);
+            modelSocket.initQuiz(dataCache.nowQuiz.quizId);
         });
 
         // 点击上课听题目 end
 
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 对没有功能的按钮 做提示处理
-    function initNoFnBtn() {
+    modelDom.initNoFnBtn = function () {
         var deferred = Q.defer();
         var onNoFn;
         onNoFn = function (e) {
@@ -528,93 +495,147 @@ define([
         $cache.morePlanBtn.on('click', onNoFn);
         deferred.resolve();
         return deferred.promise;
-    }
+    };
+
+    // 设置教案图片
+    modelDom.setPlanBox = function(imgUrl) {
+        var deferred = Q.defer();
+        var loadSuccess, loadImg;
+        loadSuccess = function (canvas) {
+            $cache.planFg = $(canvas);
+            canvas.className = 'plan-img';
+            $cache.planScroll.html(canvas);
+            jspScrollList.planFn.reinitialise();
+            deferred.resolve();
+        };
+        loadImg = modelUtil.loadImg2Canvas(imgUrl);
+        loadImg
+            .then(loadSuccess)
+            .done();
+        return deferred.promise;
+    };
+
+    // 可拖拽图片放大框
+    modelDom.dragImg = function() {
+        function limtImgSize() {
+            var winImg;
+
+            $cache.winImgZoom
+                .css({
+                    'max-width': cache.winW - 2,
+                    'max-height': cache.winH - 32
+                });
+            winImg = {
+                left: +$cache.winImg.css('left').split('px')[0],
+                top: +$cache.winImg.css('top').split('px')[0],
+                width: $cache.winImg.width(),
+                height: $cache.winImg.height()
+            };
+
+            if (winImg.left + winImg.width > cache.winW) {
+                $cache.winImg.css('left', cache.winW - winImg.width);
+            }
+            if (winImg.top + winImg.height > cache.winH) {
+                $cache.winImg.css('top', cache.winH - winImg.height);
+            }
+        }
+
+        $cache.win.on('resize', function () {
+            limtImgSize();
+        });
+        var draggie = new Draggabilly($cache.winImg.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        draggie = null;
+        limtImgSize();
+    };
+
+    // 发送聊天数据调用
+    modelTask.onSendMsg = function (data, callback) {
+        var htmlCent, msg;
+        htmlCent = data;
+        if (!htmlCent.length) {
+            return false;
+        }
+        $cache.umMsgBox.html('');
+
+        msg = {userId: dataCache.selfUserId, content: htmlCent};
+        console.log(msg);
+        socket.emit('mFC.reqChatMessages', msg);
+        dataCache.taskMsg.push(msg);
+        callback(msg);
+    };
+
+    // 聊天渲染完毕回调
+    modelTask.onRenderTaskView = function(data) {
+        var msg;
+        if ($.isArray(data)) {
+            msg = data;
+        } else {
+            msg = [data];
+        }
+        modelTask.renderTaskView(msg)
+            .then(function (data) {
+                var $imgs, imgLen, loadLen;
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function (i, img) {
+                    console.log(img);
+                    img.onload = function () {
+                        loadLen += 1;
+                        if (imgLen === loadLen) {
+                            $cache.taskScroll.append(data);
+                            setTimeout(function () {
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
+            });
+    };
 
     // 对话框数据渲染
-    function renderTaskView(msgs) {
-        var deferred = Q.defer();
-        var datas = [];
-        if (!(msgs instanceof Array)) {
-            throw 'msgs must be array!';
-        }
-        async.eachSeries(msgs, function (msg, callback) {
-            //console.log(msg.userId);
-            transport.getUserInfo(msg.userId).then(function (info) {
-                //console.log(info);
-                var data = {};
-                data.portrait = info.headImage;
-                data.content = msg.content;
-                if (msg.userId === dataCache.selfUserId) {
-                    //console.log(msg.userId + '"==="' + dataCache.selfUserId);
-                    data.userType = 'self';
-                } else {
-                    data.userType = 'buddy';
-                }
-                datas.push(data);
-                callback();
-            });
-        }, function (err) {
-            console.log(datas);
-            dust.render('taskView', {msgs: datas}, function (err, out) {
-                if (err) {
-                    deferred.reject(err);
-                } else {
-                    deferred.resolve(out);
-                }
-            });
-        });
-
-        return deferred.promise;
-    }
-
-    // 上课试题数据渲染
-    function renderClassSessionView(data) {
-        var deferred = Q.defer();
-        if (!dataCache.quizIdListForServe) {
-            dataCache.quizIdListForServe = data;
-        }
-        for (var i = 0, len = data.quizIdListResults.length; i < len; i++) {
-            var result = data.quizIdListResults[i];
-            var quizIdsList = result.quizIds;
-            var reQuizIdsList = [];
-            //console.log(result);
-            for (var j = 0, jlen = quizIdsList.length; j < jlen; j++) {
-                var quizId = quizIdsList[j];
-                var listObj = {
-                    index: dataCache.quizIdIndex += 1,
-                    quizId: quizId
-                };
-                reQuizIdsList.push(listObj);
-                dataCache.quizIdList.push(listObj);
+    modelTask.renderTaskView = function (msgs) {
+            var deferred = Q.defer();
+            var datas = [];
+            if (!(msgs instanceof Array)) {
+                throw 'msgs must be array!';
             }
-            result.quizIds = reQuizIdsList;
-        }
-        //console.log(data);
-        dust.render('classSessionView', data, function (err, out) {
-            if (err) {
-                deferred.reject(err);
-            } else {
-                deferred.resolve(out);
-            }
-        });
-        return deferred.promise;
-    }
+            async.eachSeries(msgs, function (msg, callback) {
+                //console.log(msg.userId);
+                transport.getUserInfo(msg.userId).then(function (info) {
+                    //console.log(info);
+                    var data = {};
+                    data.portrait = info.headImage;
+                    data.content = msg.content;
+                    if (msg.userId === dataCache.selfUserId) {
+                        //console.log(msg.userId + '"==="' + dataCache.selfUserId);
+                        data.userType = 'self';
+                    } else {
+                        data.userType = 'buddy';
+                    }
+                    datas.push(data);
+                    callback();
+                });
+            }, function (err) {
+                console.log(datas);
+                dust.render('taskView', {msgs: datas}, function (err, out) {
+                    if (err) {
+                        deferred.reject(err);
+                    } else {
+                        deferred.resolve(out);
+                    }
+                });
+            });
 
-    // 上课试题数据UI输出
-    function showClassSessionView(data) {
-        var deferred = Q.defer();
-        renderClassSessionView(data).then(function (data) {
-            $cache.rightSessionScroll.find('.session-list').remove();
-            $cache.rightSessionScroll.find('> ul').prepend(data);
-            jspScrollList.rightSessionFn.reinitialise();
-            deferred.resolve();
-        });
-        return deferred.promise;
-    }
-
+            return deferred.promise;
+        };
 
     // 富文本编辑器初始化事件
-    function initUMEditorEvent() {
+    modelTask.initUMEditorEvent = function() {
         var deferred = Q.defer();
 
         // fix bug send none msg
@@ -624,7 +645,7 @@ define([
         // 发送按钮
         $cache.taskSumBtn.on('click', function (e) {
             var htmlCent = $cache.umMsgBox.html();
-            util.taskSendMsg(htmlCent, renderTaskViewHtml);
+            modelTask.onSendMsg(htmlCent, modelTask.onRenderTaskView);
         });
         // 获取摄像头图片按钮
         $cache.taskWebcamBtn.on('click', function (e) {
@@ -660,7 +681,7 @@ define([
                     modal: true
                 });
             };
-            loadImg = util.loadImg2Canvas(blobUrl, {
+            loadImg = modelUtil.loadImg2Canvas(blobUrl, {
                 maxWidth: 600,
                 maxHeight: 600,
                 canvas: true
@@ -671,10 +692,10 @@ define([
         });
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 初始化富文本编辑器
-    function initUMEditor() {
+    modelTask.initUMEditor = function() {
         var deferred = Q.defer();
         var umReady = function (stat) {
             var umDom = um.container;
@@ -699,10 +720,72 @@ define([
         um.addListener('ready', umReady);
 
         return deferred.promise;
-    }
+    };
+
+    // 上课试题数据渲染
+    modelClass.renderClassSessionView = function(data) {
+        var deferred = Q.defer();
+        if (!dataCache.quizIdListForServe) {
+            dataCache.quizIdListForServe = data;
+        }
+        for (var i = 0, len = data.quizIdListResults.length; i < len; i++) {
+            var result = data.quizIdListResults[i];
+            var quizIdsList = result.quizIds;
+            var reQuizIdsList = [];
+            //console.log(result);
+            for (var j = 0, jlen = quizIdsList.length; j < jlen; j++) {
+                var quizId = quizIdsList[j];
+                var listObj = {
+                    index: dataCache.quizIdIndex += 1,
+                    quizId: quizId
+                };
+                reQuizIdsList.push(listObj);
+                dataCache.quizIdList.push(listObj);
+            }
+            result.quizIds = reQuizIdsList;
+        }
+        //console.log(data);
+        dust.render('classSessionView', data, function (err, out) {
+            if (err) {
+                deferred.reject(err);
+            } else {
+                deferred.resolve(out);
+            }
+        });
+        return deferred.promise;
+    };
+
+    // 上课试题数据UI输出
+    modelClass.showClassSessionView = function(data) {
+        var deferred = Q.defer();
+        modelClass.renderClassSessionView(data).then(function (data) {
+            $cache.rightSessionScroll.find('.session-list').remove();
+            $cache.rightSessionScroll.find('> ul').prepend(data);
+            jspScrollList.rightSessionFn.reinitialise();
+            deferred.resolve();
+        });
+        return deferred.promise;
+    };
+
+    // 通过数据切换题目
+    modelClass.initQuiz = function(quizId) {
+        var deferred = Q.defer();
+        transport.getQuizInfoById(quizId)
+            .then(function (data) {
+                dataCache.nowQuiz.quizId = quizId;
+                dataCache.nowQuiz.teacherUrl = data.teacherUrl;
+                dataCache.nowQuiz.studentUrl = data.studentUrl;
+                modelDom.setPlanBox(dataCache.nowQuiz.teacherUrl);
+                modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl)
+                    .done(function () {
+                        deferred.resolve();
+                    });
+            });
+        return deferred.promise;
+    };
 
     // 初始化画布事件
-    function initSketchpadEvent() {
+    modelBoard.initSketchpadEvent = function() {
         var deferred = Q.defer();
 
         var $canvas, myBoard, parentOffset, offsetPoint;
@@ -763,10 +846,10 @@ define([
 
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 初始化画布控制
-    function initSketchpadCtl() {
+    modelBoard.initSketchpadCtl = function() {
         var deferred = Q.defer();
         var eraser, pen, penBlack, penRed, myBoard;
         myBoard = cache.Board;
@@ -818,10 +901,10 @@ define([
         });
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 重设画布
-    function setSketchpadView(bgUrl, fgUrl) {
+    modelBoard.setSketchpadView = function(bgUrl, fgUrl) {
         var deferred = Q.defer();
 
         var loadBg, loadFg, onLoadAll, sketchpadReady;
@@ -839,7 +922,7 @@ define([
             deferred.resolve();
         };
         if (bgUrl) {
-            loadBg = util.loadImg2Canvas(bgUrl);
+            loadBg = modelUtil.loadImg2Canvas(bgUrl);
         }
 
         if (fgUrl) {
@@ -850,7 +933,7 @@ define([
                     sketchpadReady(canvasBg);
                 });
             });
-            loadFg = util.loadImg2Canvas(fgUrl);
+            loadFg = modelUtil.loadImg2Canvas(fgUrl);
             loadBg
                 .then(function (canvas) {
                     onLoadAll('loadBg', canvas);
@@ -883,27 +966,10 @@ define([
         }
 
         return deferred.promise;
-    }
-
-    // 通过数据切换题目
-    function initQuiz(quizId) {
-        var deferred = Q.defer();
-        transport.getQuizInfoById(quizId)
-            .then(function (data) {
-                dataCache.nowQuiz.quizId = quizId;
-                dataCache.nowQuiz.teacherUrl = data.teacherUrl;
-                dataCache.nowQuiz.studentUrl = data.studentUrl;
-                setPlanBox(dataCache.nowQuiz.teacherUrl);
-                setSketchpadView(dataCache.nowQuiz.studentUrl)
-                    .done(function () {
-                        deferred.resolve();
-                    });
-            });
-        return deferred.promise;
-    }
+    };
 
     // 初始化画布框
-    function initSketchpadBox() {
+    modelBoard.initSketchpadBox = function() {
         var deferred = Q.defer();
         var Board, canvas2;
         Board = new WSY.hfCanvasBoard({width: 100, height: 100});
@@ -917,28 +983,10 @@ define([
         jspScrollList.sketchpadFn.reinitialise();
         deferred.resolve();
         return deferred.promise;
-    }
-
-    // 设置教案图片
-    function setPlanBox(imgUrl) {
-        var deferred = Q.defer();
-        var loadSuccess, loadImg;
-        loadSuccess = function (canvas) {
-            $cache.planFg = $(canvas);
-            canvas.className = 'plan-img';
-            $cache.planScroll.html(canvas);
-            jspScrollList.planFn.reinitialise();
-            deferred.resolve();
-        };
-        loadImg = util.loadImg2Canvas(imgUrl);
-        loadImg
-            .then(loadSuccess)
-            .done();
-        return deferred.promise;
-    }
+    };
 
     //媒体测试弹窗
-    function mediaTest() {
+    modelRtc.mediaTest = function() {
         var deferred = Q.defer();
         $cache.mediaTest.on('loadeddata', function () {
             $cache.mediaTest.get(0).play();
@@ -964,10 +1012,10 @@ define([
             modal: true
         });
         return deferred.promise;
-    }
+    };
 
     // 初始化媒体测试
-    function detectRTCInit() {
+    modelRtc.detectRTCInit =function() {
         var deferred = Q.defer();
         DetectRTC.load(function () {
             if (!DetectRTC.browser.isChrome) {
@@ -1004,46 +1052,10 @@ define([
             });
         });
         return deferred.promise;
-    }
-
-    // 可拖拽图片放大框
-    function dragImg() {
-        function limtImgSize() {
-            var winImg;
-
-            $cache.winImgZoom
-                .css({
-                    'max-width': cache.winW - 2,
-                    'max-height': cache.winH - 32
-                });
-            winImg = {
-                left: +$cache.winImg.css('left').split('px')[0],
-                top: +$cache.winImg.css('top').split('px')[0],
-                width: $cache.winImg.width(),
-                height: $cache.winImg.height()
-            };
-
-            if (winImg.left + winImg.width > cache.winW) {
-                $cache.winImg.css('left', cache.winW - winImg.width);
-            }
-            if (winImg.top + winImg.height > cache.winH) {
-                $cache.winImg.css('top', cache.winH - winImg.height);
-            }
-        }
-
-        $cache.win.on('resize', function () {
-            limtImgSize();
-        });
-        var draggie = new Draggabilly($cache.winImg.get(0), {
-            containment: $cache.wrapper.get(0),
-            handle: '.win-topbar'
-        });
-        draggie = null;
-        limtImgSize();
-    }
+    };
 
     // 初始化 websocket 连接
-    function initSocekt() {
+    modelSocket.initSocekt = function() {
         var deferred = Q.defer();
         socket = io(socketIo, 'http://192.168.1.92:10010/');
         socket.once('connect', function () {
@@ -1055,10 +1067,10 @@ define([
             }, 600);
         });
         return deferred.promise;
-    }
+    };
 
     // 初始化交互接口
-    function initTransport() {
+    modelSocket.initTransport = function() {
         var accessToken;
         if (location.pathname.indexOf('server1.html') !== -1) {
             accessToken = '3e59d2f7-041f-435a-94b6-a42bdaebbb66';
@@ -1144,10 +1156,10 @@ define([
             socket.emit('dHC.reqUploadToken');
             return deferred.promise;
         };
-    }
+    };
 
     // 对交互接口的逻辑处理
-    function processTransport() {
+    modelSocket.processTransport = function() {
         var deferred = Q.defer();
         transport.login()
             .then(transport.getUserId, function () {
@@ -1160,10 +1172,10 @@ define([
             .then(function () {
                 transport.classList()
                     .then(function (data) {
-                        showClassSessionView(data)
+                        modelClass.showClassSessionView(data)
                             .then(function () {
                                 socket.on('mFC.resChatMessages', function (data) {
-                                    renderTaskViewHtml(data);
+                                    modelTask.onRenderTaskView(data);
                                     dataCache.taskMsg.push(data);
                                 });
                                 socket.on('mFC.resBoardDraw', function (data) {
@@ -1181,10 +1193,10 @@ define([
             });
 
         return deferred.promise;
-    }
+    };
 
     // 上传二进制对象到七牛
-    function uploadBlobToQN(blob) {
+    modelSocket.uploadBlobToQN = function(blob) {
         var deferred = Q.defer();
         transport.upLoadToken()
             .then(function (data) {
@@ -1197,7 +1209,7 @@ define([
 
                 form.append('file', blob, key);
                 form.append('token', token);
-
+                //alert('run');
                 $.ajax({
                     url: 'http://upload.qiniu.com/',
                     type: 'POST',
@@ -1212,7 +1224,7 @@ define([
                             xhrobj.upload.addEventListener('progress', function (ev) {
                                 var percent = 0;
                                 var position = ev.loaded || ev.position;
-                                var total = ev.total || e.totalSize;
+                                var total = ev.total || ev.totalSize;
                                 if (ev.lengthComputable) {
                                     percent = Math.ceil(position / total * 100);
                                 }
@@ -1232,71 +1244,72 @@ define([
                 });
             });
         return deferred.promise;
-    }
+    };
 
     //  上传当前数据
-    function uploadQuizData() {
+    modelSocket.uploadQuizData =  function() {
         var upData = {
             quizId: dataCache.nowQuiz.quizId,
             chatRecords: dataCache.taskMsg,
             blankPageUrl: []
         };
         cache.Board._canvas.canvas.toBlob(function (blob) {
-            uploadBlobToQN(blob).then(function (data) {
-                upData.imageUrl = data;
-                console.log(upData);
-                socket.emit('dHC.reqSaveQuizInfo', upData);
-            });
+            modelSocket.uploadBlobToQN(blob)
+                .then(function (data) {
+                    upData.imageUrl = data;
+                    console.log(upData);
+                    socket.emit('dHC.reqSaveQuizInfo', upData);
+                });
         });
-    }
+    };
 
-    window.uploadQuizData = uploadQuizData;
+    // 初始化上课数据
+    modelClass.init = function(){
+        var deferred = Q.defer();
+        var quizInitData = dataCache.quizIdList[0];
+        console.log(quizInitData);
+        dataCache.nowQuiz.quizId = quizInitData.quizId;
+
+        modelClass.initQuiz(quizInitData.quizId)
+            .then(function () {
+                deferred.resolve();
+            });
+        return deferred.promise;
+    };
 
     // 初始化
-    (function init() {
+    function init() {
+        modelGCtl.init();
         cache.winW = $cache.win.width();
         cache.winH = $cache.win.height();
         $cache.win.on('resize', function () {
             cache.winW = $cache.win.width();
             cache.winH = $cache.win.height();
         });
-        detectRTCInit()
-            .then(initElement)
-            .then(DetectRTC)
-            .then(mediaTest)
-            //initElement()
-            .then(initScrollPane)
-            .then(initCtlBtn)
-            .then(initUMEditor)
-            .then(initUMEditorEvent)
-            .then(initSketchpadBox)
-            .then(initSketchpadEvent)
-            .then(initSketchpadCtl)
-            .then(initSocekt)
-            .then(initTransport)
-            .then(processTransport)
-            .then(function () {
-                return Q.Promise(function (resolve, reject, notify) {
-                    var quizInitData = dataCache.quizIdList[0];
-                    dataCache.nowQuiz.quizId = quizInitData.quizId;
 
-                    initQuiz(quizInitData.quizId)
-                        .then(function () {
-                            resolve();
-                        });
-                });
-            })
-            .then(initNoFnBtn)
-            .done(function () {
-                dragImg();
-            });
-    })();
+        modelRtc.detectRTCInit()
+            .then(modelDom.initElement)
+            .then(modelRtc.DetectRTC)
+            .then(modelRtc.mediaTest)
+            .then(modelDom.initScrollPane)
+            .then(modelDom.initCtlBtn)
+            .then(modelTask.initUMEditor)
+            .then(modelTask.initUMEditorEvent)
+            .then(modelBoard.initSketchpadBox)
+            .then(modelBoard.initSketchpadEvent)
+            .then(modelBoard.initSketchpadCtl)
+            .then(modelSocket.initSocekt)
+            .then(modelSocket.initTransport)
+            .then(modelSocket.processTransport)
+            .then(modelClass.init)
+            .then(modelDom.initNoFnBtn)
+            .done(modelDom.dragImg);
+    }
 
+    init();
 
 
     function test() {
-
-
         // object to global debug
         window.socketIo = socketIo;
         window.io = io;
@@ -1304,9 +1317,10 @@ define([
         window.jspScrollList = jspScrollList;
         window.$cache = $cache;
         window.cache = cache;
-        window.util = util;
+        window.util = modelUtil;
         window.dataCache = dataCache;
-        window.uploadBlobToQN = uploadBlobToQN;
+        window.uploadBlobToQN = modelSocket.uploadBlobToQN;
+        window.uploadQuizData = modelSocket.uploadQuizData;
         window.async = async;
 
         window.testBoard = function (bgUrl, fgUrl) {
@@ -1314,14 +1328,14 @@ define([
             //cache.Board.setBgImg({
             //    image: imgUrl
             //});
-            setSketchpadView(bgUrl, fgUrl);
+            modelBoard.setSketchpadView(bgUrl, fgUrl);
         };
 
         window.dataURLtoBlob = dataURLtoBlob;
         window.transport = transport;
 
         // 对话框数据渲染测试
-        function taskViewTest() {
+        window.taskViewTest =  function() {
             var msgs = [
                 {userId: '234', content: 'test1'},
                 {userId: '7310', content: 'test2'},
@@ -1331,7 +1345,7 @@ define([
                 {userId: '234', content: 'test6'},
                 {userId: '7310', content: '<img class="input-img" src="./assets/images/beastie.png">'}
             ];
-            renderTaskView(msgs)
+            modelTask.renderTaskView(msgs)
                 .then(function (data) {
                     console.log(data);
                     var $imgs, imgLen, loadLen;
@@ -1351,7 +1365,7 @@ define([
                         };
                     });
                 });
-        }
+        };
     }
     window.debug = test;
 });
