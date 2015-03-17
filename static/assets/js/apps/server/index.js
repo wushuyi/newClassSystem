@@ -471,7 +471,7 @@ define([
             var $self = $(this);
             var quizData = $self.data();
             dataCache.nowQuiz.quizId = quizData.quizId;
-            modelSocket.initQuiz(dataCache.nowQuiz.quizId);
+            modelClass.initQuiz(dataCache.nowQuiz.quizId);
         });
 
         // 点击上课听题目 end
@@ -1307,7 +1307,6 @@ define([
     }
 
     init();
-
 
     function test() {
         // object to global debug
