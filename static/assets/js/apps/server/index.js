@@ -472,17 +472,75 @@ define([
         // 点击上课听题目 start
         $cache.rightSessionScroll.on('click', 'li.quiz', function (e) {
             var $self = $(this);
+            var quizIndex = +$self.html();
             var quizData = $self.data();
+
+            modelDom.rightSessionNeedShow(quizIndex - 1);
+            modelDom.leftSessionNeedShow(quizIndex - 1);
+
             dataCache.nowQuiz.quizId = quizData.quizId;
-            dataCache.nowQuiz.index = +$self.html();
+            dataCache.nowQuiz.index = quizIndex;
+            dataCache.nowQuiz.planIndex = quizIndex;
+            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+        });
+        $cache.rightPrevBtn.on('click', function(e){
+            var selfIndex = +$cache.rightToolNum.html();
+            var quizIdListIndex = selfIndex - 2;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            modelDom.rightSessionNeedShow(quizIdListIndex);
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            dataCache.nowQuiz.quizId = quizData.quizId;
+            dataCache.nowQuiz.index = selfIndex - 1;
+            dataCache.nowQuiz.planIndex = selfIndex - 1;
+            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+        });
+        $cache.rightNextBtn.on('click', function(e){
+            var selfIndex = +$cache.rightToolNum.html();
+            var quizIdListIndex = selfIndex;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            modelDom.rightSessionNeedShow(quizIdListIndex);
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            dataCache.nowQuiz.quizId = quizData.quizId;
+            dataCache.nowQuiz.index = selfIndex + 1;
+            dataCache.nowQuiz.planIndex = selfIndex + 1;
             modelClass.initQuiz(dataCache.nowQuiz.quizId);
         });
 
         // 点击上课听题目 end
+        $cache.leftSessionScroll.on('click', 'li.quiz', function (e) {
+            var $self = $(this);
+            var quizData = $self.data();
+            var quizId = quizData.quizId;
+            dataCache.nowQuiz.planIndex = +$self.html();
+            modelClass.swichPlan(quizId);
+        });
+        $cache.leftPrevBtn.on('click', function(e){
+            var selfIndex = +$cache.leftToolNum.html();
+            var quizIdListIndex = selfIndex - 2;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            var quizId = quizData.quizId;
+            dataCache.nowQuiz.planIndex = quizIdListIndex + 1;
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            modelClass.swichPlan(quizId);
+        });
+        $cache.leftNextBtn.on('click', function(e){
+            var selfIndex = +$cache.leftToolNum.html();
+            var quizIdListIndex = selfIndex;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            var quizId = quizData.quizId;
+            dataCache.nowQuiz.planIndex = quizIdListIndex + 1;
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            modelClass.swichPlan(quizId);
+        });
+        // 老师切换教案 start
+
+        // 老师切换教案 end
 
         deferred.resolve();
         return deferred.promise;
     };
+
+
 
     // 对没有功能的按钮 做提示处理
     modelDom.initNoFnBtn = function () {
@@ -553,6 +611,33 @@ define([
         });
         draggie = null;
         limtImgSize();
+    };
+
+    // 判断右边上课题目切换显示
+    modelDom.rightSessionNeedShow = function(index){
+        if(index === 0){
+            $cache.rightPrevBtn.hide();
+            $cache.rightNextBtn.show();
+        }else if(index === (dataCache.quizIdList.length - 1)){
+            $cache.rightPrevBtn.show();
+            $cache.rightNextBtn.hide();
+        }else{
+            $cache.rightPrevBtn.show();
+            $cache.rightNextBtn.show();
+        }
+    };
+    // 判断左边边上课题目切换显示
+    modelDom.leftSessionNeedShow = function(index){
+        if(index === 0){
+            $cache.leftPrevBtn.hide();
+            $cache.leftNextBtn.show();
+        }else if(index === (dataCache.quizIdList.length - 1)){
+            $cache.leftPrevBtn.show();
+            $cache.leftNextBtn.hide();
+        }else{
+            $cache.leftPrevBtn.show();
+            $cache.leftNextBtn.show();
+        }
     };
 
     // 发送聊天数据调用
@@ -796,6 +881,19 @@ define([
                         $cache.rightTitleNum.text(nowQuizIndex);
                         deferred.resolve();
                     });
+            });
+        return deferred.promise;
+    };
+
+    modelClass.swichPlan = function(quizId){
+        var deferred = Q.defer();
+        transport.getQuizInfoById(quizId)
+            .then(function (data) {
+                var planIndex = dataCache.nowQuiz.planIndex;
+                modelDom.setPlanBox(data.teacherUrl);
+                $cache.leftToolNum.text(planIndex);
+                $cache.leftTitleNum.text(planIndex);
+                deferred.resolve();
             });
         return deferred.promise;
     };
@@ -1285,7 +1383,9 @@ define([
         var quizInitData = dataCache.quizIdList[0];
         dataCache.nowQuiz.quizId = quizInitData.quizId;
         dataCache.nowQuiz.index = 1;
-
+        dataCache.nowQuiz.planIndex = 1;
+        modelDom.rightSessionNeedShow(dataCache.nowQuiz.index - 1);
+        modelDom.leftSessionNeedShow(dataCache.nowQuiz.index - 1);
         modelClass.initQuiz(quizInitData.quizId)
             .then(function () {
                 deferred.resolve();
