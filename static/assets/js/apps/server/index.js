@@ -65,6 +65,7 @@ define([
         dataCache.quizIdIndex = 0;
         dataCache.quizIdListForServe = null;
         dataCache.quizIdList = [];
+        dataCache.quizIdInfoList = {};
         dataCache.userInfo = {};
         dataCache.nowQuiz = {};
         dataCache.taskMsg = [];
@@ -108,6 +109,8 @@ define([
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
         $cache.rightSessionCent = $cache.rightCent.find('.session-cent');
 
+        $cache.leftSessionScrollCent = $cache.leftSessionCent.find('.scroll-cent');
+        $cache.leftSessionScroll = $cache.leftSessionCent.find('.scroll');
         $cache.rightSessionScrollCent = $cache.rightSessionCent.find('.scroll-cent');
         $cache.rightSessionScroll = $cache.rightSessionCent.find('.scroll');
 
@@ -122,10 +125,10 @@ define([
         $cache.planScroll = $cache.planCent.find('.scroll');
 
         $cache.closeClassBtn = $cache.leftCentTopBar.find('.close-class-btn');
-        $cache.runTimeNum = $cache.leftCentToolBar.find('.run-time .num');
-        $cache.leftTitleNum = $cache.leftCentToolBar.find('.title .num');
+        $cache.runTimeNum = $cache.leftCentTopBar.find('.run-time .num');
+        $cache.leftTitleNum = $cache.leftCentTopBar.find('.title .num');
 
-        $cache.rightTitleNum = $cache.rightCentToolBar.find('.title .num');
+        $cache.rightTitleNum = $cache.rightCentTopBar.find('.title .num');
 
         $cache.addErrorBtn = $cache.leftCentToolBar.find('.add-error-btn');
         $cache.playVideoBtn = $cache.leftCentToolBar.find('.play-video-btn');
@@ -220,6 +223,9 @@ define([
             hideFocus: true
         }).data('jsp');
         jspScrollList.ratyFn = $cache.ratyPopScroll.jScrollPane({
+            hideFocus: true
+        }).data('jsp');
+        jspScrollList.leftSessionFn = $cache.leftSessionScrollCent.jScrollPane({
             hideFocus: true
         }).data('jsp');
         jspScrollList.rightSessionFn = $cache.rightSessionScrollCent.jScrollPane({
@@ -468,6 +474,7 @@ define([
             var $self = $(this);
             var quizData = $self.data();
             dataCache.nowQuiz.quizId = quizData.quizId;
+            dataCache.nowQuiz.index = +$self.html();
             modelClass.initQuiz(dataCache.nowQuiz.quizId);
         });
 
@@ -722,18 +729,19 @@ define([
     // 上课试题数据渲染
     modelClass.renderClassSessionView = function(data) {
         var deferred = Q.defer();
+        var result, quizIdsList, reQuizIdsList, quizId, listObj, quizNum = 0;
+
         if (!dataCache.quizIdListForServe) {
             dataCache.quizIdListForServe = data;
         }
         for (var i = 0, len = data.quizIdListResults.length; i < len; i++) {
-            var result = data.quizIdListResults[i];
-            var quizIdsList = result.quizIds;
-            var reQuizIdsList = [];
-            //console.log(result);
+            result = data.quizIdListResults[i];
+            quizIdsList = result.quizIds;
+            reQuizIdsList = [];
             for (var j = 0, jlen = quizIdsList.length; j < jlen; j++) {
-                var quizId = quizIdsList[j];
-                var listObj = {
-                    index: dataCache.quizIdIndex += 1,
+                quizId = quizIdsList[j];
+                listObj = {
+                    index: quizNum += 1,
                     quizId: quizId
                 };
                 reQuizIdsList.push(listObj);
@@ -741,7 +749,7 @@ define([
             }
             result.quizIds = reQuizIdsList;
         }
-        //console.log(data);
+
         dust.render('classSessionView', data, function (err, out) {
             if (err) {
                 deferred.reject(err);
@@ -755,12 +763,18 @@ define([
     // 上课试题数据UI输出
     modelClass.showClassSessionView = function(data) {
         var deferred = Q.defer();
-        modelClass.renderClassSessionView(data).then(function (data) {
-            $cache.rightSessionScroll.find('.session-list').remove();
-            $cache.rightSessionScroll.find('> ul').prepend(data);
-            jspScrollList.rightSessionFn.reinitialise();
-            deferred.resolve();
-        });
+        modelClass.renderClassSessionView(data)
+            .then(function (data) {
+                $cache.leftSessionScroll.find('.session-list').remove();
+                $cache.leftSessionScroll.find('> ul').prepend(data);
+                jspScrollList.leftSessionFn.reinitialise();
+
+                $cache.rightSessionScroll.find('.session-list').remove();
+                $cache.rightSessionScroll.find('> ul').prepend(data);
+                jspScrollList.rightSessionFn.reinitialise();
+
+                deferred.resolve();
+            });
         return deferred.promise;
     };
 
@@ -775,6 +789,11 @@ define([
                 modelDom.setPlanBox(dataCache.nowQuiz.teacherUrl);
                 modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl)
                     .done(function () {
+                        var nowQuizIndex = dataCache.nowQuiz.index;
+                        $cache.leftToolNum.text(nowQuizIndex);
+                        $cache.rightToolNum.text(nowQuizIndex);
+                        $cache.leftTitleNum.text(nowQuizIndex);
+                        $cache.rightTitleNum.text(nowQuizIndex);
                         deferred.resolve();
                     });
             });
@@ -952,7 +971,7 @@ define([
                 .then(function (canvas) {
                     cache.Board.resizeAndClear({
                         width: canvas.width,
-                        height: canvas.height
+                        height: canvas.height > 1200 ?  canvas.height : 1200
                     });
                     sketchpadReady(canvas);
                 })
@@ -1084,7 +1103,6 @@ define([
             });
             return deferred.promise;
         };
-
         transport.getUserId = function () {
             var deferred = Q.defer();
             socket.once('uC.resGetUserId', function (data) {
@@ -1093,7 +1111,6 @@ define([
             socket.emit('uC.reqGetUserId');
             return deferred.promise;
         };
-
         transport.getUserInfo = function (userId) {
             var deferred = Q.defer();
             var cacheUserInfo = dataCache.userInfo[userId];
@@ -1133,12 +1150,18 @@ define([
         };
         transport.getQuizInfoById = function (quizId) {
             var deferred = Q.defer();
-            socket.once('qC.resGetQuizInfoById', function (data) {
-                deferred.resolve(data);
-            });
-            socket.emit('qC.reqGetQuizInfoById', {
-                quizId: quizId
-            });
+            var cacheQuizIdInfo = dataCache.quizIdInfoList[quizId];
+            if(cacheQuizIdInfo){
+                deferred.resolve(cacheQuizIdInfo);
+            }else{
+                socket.once('qC.resGetQuizInfoById', function (data) {
+                    dataCache.quizIdInfoList[quizId] = data;
+                    deferred.resolve(data);
+                });
+                socket.emit('qC.reqGetQuizInfoById', {
+                    quizId: quizId
+                });
+            }
             return deferred.promise;
         };
         transport.upLoadToken = function () {
@@ -1260,8 +1283,8 @@ define([
     modelClass.init = function(){
         var deferred = Q.defer();
         var quizInitData = dataCache.quizIdList[0];
-        console.log(quizInitData);
         dataCache.nowQuiz.quizId = quizInitData.quizId;
+        dataCache.nowQuiz.index = 1;
 
         modelClass.initQuiz(quizInitData.quizId)
             .then(function () {
