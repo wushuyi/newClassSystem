@@ -3,6 +3,7 @@
  */
 define([
     'jquery',
+    'localforage',
     'qjs',
     'async',
     'lodashJs',
@@ -27,6 +28,7 @@ define([
     'loadImageAll'
 ],function(
     $,
+    localforage,
     Q,
     async,
     _,
@@ -65,7 +67,6 @@ define([
         dataCache.quizIdIndex = 0;
         dataCache.quizIdListForServe = null;
         dataCache.quizIdList = [];
-        dataCache.quizIdInfoList = {};
         dataCache.userInfo = {};
         dataCache.nowQuiz = {};
         dataCache.taskMsg = [];
@@ -113,6 +114,7 @@ define([
         $cache.leftSessionScroll = $cache.leftSessionCent.find('.scroll');
         $cache.rightSessionScrollCent = $cache.rightSessionCent.find('.scroll-cent');
         $cache.rightSessionScroll = $cache.rightSessionCent.find('.scroll');
+        $cache.blankPages = $cache.rightSessionScroll.find('.add-list .class-list ul');
 
         $cache.answerLock = $('#answer-lock');
 
@@ -183,6 +185,7 @@ define([
         $cache.upimgViewBox = $cache.upimgPop.find('.view-box');
         $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
+        $cache.dataSyncingPop = $cache.popList.find('.data-syncing-pop');
 
         deferred.resolve();
         return deferred.promise;
@@ -396,7 +399,6 @@ define([
         });
         // 上传本地图片 end
 
-
         // 聊天框 start
         $cache.taskCtlBtn.on('click', function (e) {
             if (!lockCtl.taskBox) {
@@ -422,14 +424,14 @@ define([
                 $cache.answerBtn.trigger('answerLock');
             }
         });
-        $cache.addPageBtn.on('click', function (e) {
-            var myBoard, canvasEl;
-            myBoard = cache.Board;
-            myBoard.addPartitionPage({});
-            canvasEl = myBoard.getCanvas();
-            $cache.sketchpadScroll.height(canvasEl.height);
-            jspScrollList.sketchpadFn.reinitialise();
-        });
+        //$cache.addPageBtn.on('click', function (e) {
+        //    var myBoard, canvasEl;
+        //    myBoard = cache.Board;
+        //    myBoard.addPartitionPage({});
+        //    canvasEl = myBoard.getCanvas();
+        //    $cache.sketchpadScroll.height(canvasEl.height);
+        //    jspScrollList.sketchpadFn.reinitialise();
+        //});
         $cache.leftToolNum.on('click', function (e) {
             if (lockCtl.leftSessionCent) {
                 $cache.leftSessionCent.hide();
@@ -478,10 +480,26 @@ define([
             modelDom.rightSessionNeedShow(quizIndex - 1);
             modelDom.leftSessionNeedShow(quizIndex - 1);
 
-            dataCache.nowQuiz.quizId = quizData.quizId;
-            dataCache.nowQuiz.index = quizIndex;
-            dataCache.nowQuiz.planIndex = quizIndex;
-            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelSocket.uploadQuizData()
+                .then(function(){
+                    dataCache.nowQuiz.quizId = quizData.quizId;
+                    dataCache.nowQuiz.index = quizIndex;
+                    dataCache.nowQuiz.planIndex = quizIndex;
+                    modelClass.initQuiz(dataCache.nowQuiz.quizId)
+                        .then(function(){
+                            console.log('imRun');
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
         });
         $cache.rightPrevBtn.on('click', function(e){
             var selfIndex = +$cache.rightToolNum.html();
@@ -505,7 +523,11 @@ define([
             dataCache.nowQuiz.planIndex = selfIndex + 1;
             modelClass.initQuiz(dataCache.nowQuiz.quizId);
         });
-
+        $cache.addPageBtn.on('click', function(e){
+            dataCache.nowQuiz.studyBlankPages.push({});
+            $cache.blankPages.append('<li>'+dataCache.nowQuiz.studyBlankPages.length+'</li>');
+            jspScrollList.rightSessionFn.reinitialise();
+        });
         // 点击上课听题目 end
         $cache.leftSessionScroll.on('click', 'li.quiz', function (e) {
             var $self = $(this);
@@ -656,6 +678,17 @@ define([
         callback(msg);
     };
 
+    modelTask.onReceiveMsg = function(data, callback){
+        var msg = data;
+        dataCache.taskMsg = [];
+        if($.isArray(msg)){
+            dataCache.taskMsg = dataCache.taskMsg.concat(msg);
+        }else{
+            dataCache.taskMsg.push(msg);
+        }
+        callback(msg);
+    };
+
     // 聊天渲染完毕回调
     modelTask.onRenderTaskView = function(data) {
         var msg;
@@ -700,7 +733,7 @@ define([
                     var data = {};
                     data.portrait = info.headImage;
                     data.content = msg.content;
-                    if (msg.userId === dataCache.selfUserId) {
+                    if (+msg.userId === +dataCache.selfUserId) {
                         //console.log(msg.userId + '"==="' + dataCache.selfUserId);
                         data.userType = 'self';
                     } else {
@@ -868,23 +901,36 @@ define([
         var deferred = Q.defer();
         transport.getQuizInfoById(quizId)
             .then(function (data) {
+                var onSetSketchpadView;
                 dataCache.nowQuiz.quizId = quizId;
                 dataCache.nowQuiz.teacherUrl = data.teacherUrl;
                 dataCache.nowQuiz.studentUrl = data.studentUrl;
+                dataCache.nowQuiz.studyBlankPages = data.studyBlankPages;
+
                 modelDom.setPlanBox(dataCache.nowQuiz.teacherUrl);
-                modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl)
-                    .done(function () {
+
+                if(data.imageUrl){
+                    onSetSketchpadView = modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl, data.imageUrl);
+                }else{
+                    onSetSketchpadView = modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl);
+                }
+                onSetSketchpadView.done(function () {
                         var nowQuizIndex = dataCache.nowQuiz.index;
                         $cache.leftToolNum.text(nowQuizIndex);
                         $cache.rightToolNum.text(nowQuizIndex);
                         $cache.leftTitleNum.text(nowQuizIndex);
                         $cache.rightTitleNum.text(nowQuizIndex);
+                        $cache.taskScroll.html('');
+                        if(data.chatRecords.length){
+                            modelTask.onReceiveMsg(data.chatRecords, modelTask.onRenderTaskView);
+                        }
                         deferred.resolve();
                     });
             });
         return deferred.promise;
     };
 
+    // 通过数据切换教案
     modelClass.swichPlan = function(quizId){
         var deferred = Q.defer();
         transport.getQuizInfoById(quizId)
@@ -1023,6 +1069,7 @@ define([
 
         var loadBg, loadFg, onLoadAll, sketchpadReady;
         sketchpadReady = function (canvasBg) {
+            //console.log('run');
             var $canvas = $(canvasBg);
             canvasBg.className = 'sketchpad-img';
             if (!$cache.sketchpadBg) {
@@ -1047,7 +1094,10 @@ define([
                     sketchpadReady(canvasBg);
                 });
             });
-            loadFg = modelUtil.loadImg2Canvas(fgUrl);
+            loadFg = modelUtil.loadImg2Canvas(fgUrl, {
+                canvas: true,
+                crossOrigin: '*'
+            });
             loadBg
                 .then(function (canvas) {
                     onLoadAll('loadBg', canvas);
@@ -1179,13 +1229,30 @@ define([
         return deferred.promise;
     };
 
+    modelSocket.clearIndexDb = function(){
+        var deferred = Q.defer();
+        localforage.keys().then(function(keys){
+            async.forEachSeries(keys,
+                function(key, callback){
+                    localforage.removeItem(key)
+                        .then(function(){
+                            callback();
+                        });
+                },
+                function(){
+                    deferred.resolve();
+                });
+        });
+        return deferred.promise;
+    };
+
     // 初始化交互接口
     modelSocket.initTransport = function() {
         var accessToken;
         if (location.pathname.indexOf('server1.html') !== -1) {
-            accessToken = '3e59d2f7-041f-435a-94b6-a42bdaebbb66';
+            accessToken = '37a6c0d8-b175-45d0-8ef8-d66191e226e3';
         } else {
-            accessToken = 'b6566da4-7d71-4154-8055-e45de4bdfb76';
+            accessToken = '70b642d7-55f1-4a8b-a77a-c7ac7aecf865';
         }
         transport.login = function () {
             var deferred = Q.defer();
@@ -1248,18 +1315,22 @@ define([
         };
         transport.getQuizInfoById = function (quizId) {
             var deferred = Q.defer();
-            var cacheQuizIdInfo = dataCache.quizIdInfoList[quizId];
-            if(cacheQuizIdInfo){
-                deferred.resolve(cacheQuizIdInfo);
-            }else{
-                socket.once('qC.resGetQuizInfoById', function (data) {
-                    dataCache.quizIdInfoList[quizId] = data;
-                    deferred.resolve(data);
+            localforage.getItem('quizId-' + quizId)
+                .then(function(cacheQuizIdInfo){
+                    if(cacheQuizIdInfo){
+                        deferred.resolve(cacheQuizIdInfo);
+                    }else{
+                        socket.once('qC.resGetQuizInfoById', function (data) {
+                            localforage.setItem('quizId-'+quizId, data)
+                                .then(function(){
+                                    deferred.resolve(data);
+                                });
+                        });
+                        socket.emit('qC.reqGetQuizInfoById', {
+                            quizId: quizId
+                        });
+                    }
                 });
-                socket.emit('qC.reqGetQuizInfoById', {
-                    quizId: quizId
-                });
-            }
             return deferred.promise;
         };
         transport.upLoadToken = function () {
@@ -1362,6 +1433,7 @@ define([
 
     //  上传当前数据
     modelSocket.uploadQuizData =  function() {
+        var deferred = Q.defer();
         var upData = {
             quizId: dataCache.nowQuiz.quizId,
             chatRecords: dataCache.taskMsg,
@@ -1372,9 +1444,39 @@ define([
                 .then(function (data) {
                     upData.imageUrl = data;
                     console.log(upData);
-                    socket.emit('dHC.reqSaveQuizInfo', upData);
+                    modelSocket.saveQuizDataLocal(upData)
+                        .then(function(){
+                            socket.on('dHC.resSaveQuizInfo', function(data){
+                                if(data.status === 'success'){
+                                    deferred.resolve();
+                                }else{
+                                    deferred.reject();
+                                }
+                            });
+                            socket.emit('dHC.reqSaveQuizInfo', upData);
+                        });
                 });
         });
+        return deferred.promise;
+    };
+
+    // 保存本地上课数据到本地indexDB
+    modelSocket.saveQuizDataLocal = function(upData){
+        var deferred = Q.defer();
+        var dbKey = 'quizId-' + upData.quizId;
+        console.log(dbKey);
+        localforage.getItem(dbKey)
+            .then(function(data){
+                console.log(data);
+                data.chatRecords = upData.chatRecords;
+                data.imageUrl = upData.imageUrl;
+                data.blankPageUrl = upData.blankPageUrl;
+                localforage.setItem(dbKey, data)
+                    .then(function(){
+                        deferred.resolve();
+                    });
+            });
+        return deferred.promise;
     };
 
     // 初始化上课数据
@@ -1414,6 +1516,7 @@ define([
             .then(modelBoard.initSketchpadBox)
             .then(modelBoard.initSketchpadEvent)
             .then(modelBoard.initSketchpadCtl)
+            .then(modelSocket.clearIndexDb)
             .then(modelSocket.initSocekt)
             .then(modelSocket.initTransport)
             .then(modelSocket.processTransport)
@@ -1428,6 +1531,8 @@ define([
         // object to global debug
         window.socketIo = socketIo;
         window.io = io;
+        window.$ = $;
+        window.localforage = localforage;
         window.socket = socket;
         window.jspScrollList = jspScrollList;
         window.$cache = $cache;
