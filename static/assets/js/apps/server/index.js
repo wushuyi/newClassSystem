@@ -41,7 +41,10 @@ define([
 ) {
     'use strict';
 
-    var URL = window.URL;
+    var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+    var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+    var URL = window.URL || window.webkitURL;
+    var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
     var modelGCtl ={},
         modelUtil ={},
@@ -1186,7 +1189,7 @@ define([
     modelBoard.setSketchpadView = function(bgUrl, fgUrl) {
         var deferred = Q.defer();
 
-        var loadBg, loadFg, onLoadAll, sketchpadReady;
+        var loadBg, loadFg, onLoadAll, sketchpadReady, bgCanvas, bgCtx;
         sketchpadReady = function (canvasBg) {
             //console.log('run');
             var $canvas = $(canvasBg);
@@ -1252,8 +1255,8 @@ define([
                 .done();
         } else if(!bgUrl && fgUrl){
             //alert('run !bgUrl && fgUrl');
-            var bgCanvas = $cache.sketchpadBg.get(0);
-            var bgCtx = bgCanvas.getContext('2d');
+            bgCanvas = $cache.sketchpadBg.get(0);
+            bgCtx = bgCanvas.getContext('2d');
             bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
             bgCanvas.width = 600;
             bgCanvas.height = 0;
@@ -1271,8 +1274,8 @@ define([
                 .done();
         } else if(!bgUrl && !fgUrl){
             //alert('run !bgUrl && !fgUrl');
-            var bgCanvas = $cache.sketchpadBg.get(0);
-            var bgCtx = bgCanvas.getContext('2d');
+            bgCanvas = $cache.sketchpadBg.get(0);
+            bgCtx = bgCanvas.getContext('2d');
             bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
             bgCanvas.width = 600;
             bgCanvas.height = 0;
@@ -1372,16 +1375,47 @@ define([
 
     // 初始化WebRtc
     modelRtc.initWebrtc = function(){
-        var video1 = document.createElement('video');
-        video1.autoplay = true;
-        video1.muted = true;
-        video1.src = cache.webMediaUrl;
-        var video2 = document.createElement('video');
-        video2.autoplay = true;
-        video2.muted = true;
-        video2.src = cache.webMediaUrl;
-        $cache.rtcLocalBox.append(video1);
-        $cache.rtcRemoteBox.append(video2);
+        var localVideo = document.createElement('video');
+        var remoteVideo = document.createElement('video');
+        localVideo.autoplay = true;
+        localVideo.muted = true;
+        localVideo.src = cache.localMedia;
+        remoteVideo.autoplay = true;
+        remoteVideo.muted = true;
+        var iceServers = {
+            'iceServers': [
+                //{url: "turn:turn.wushuyi.com"}
+                {url: 'stun:stun.l.google.com:19302'},
+                {url: 'stun:stun.sipgate.net'},
+                {url: 'stun:217.10.68.152'},
+                {url: 'stun:stun.sipgate.net:10000'},
+                {url: 'stun:217.10.68.152:10000'}
+            ]
+        };
+        var pc = new RTCPeerConnection(iceServers, { optional: [{ RtpDataChannels: true}] });
+        pc.oniceconnectionstatechange = function(e){
+            console.log(arguments);
+        };
+        pc.onsignalingstatechange = function(e){
+            console.log(arguments);
+        };
+        pc.onaddstream = function(e){
+            remoteVideo.src = URL.createObjectURL(e.stream);
+            remoteVideo.addEventListener('loadedmetadata', function() {
+
+            });
+        };
+        pc.onicecandidate = function(e){
+
+        };
+        pc.onopen = function(e){
+
+        };
+        pc.ondatachannel = function(e){
+
+        };
+        $cache.rtcLocalBox.append(localVideo);
+        $cache.rtcRemoteBox.append(remoteVideo);
         $cache.winWebrtc.show();
     };
 
