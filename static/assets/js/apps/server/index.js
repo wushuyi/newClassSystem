@@ -106,6 +106,10 @@ define([
         $cache.winImgClose = $cache.winImg.find('.win-close');
         $cache.winImgZoom = $cache.winImg.find('.zoom-img');
 
+        $cache.winWebrtc = $('#win-webrtc');
+        $cache.rtcLocalBox = $cache.winWebrtc.find('.localBox');
+        $cache.rtcRemoteBox = $cache.winWebrtc.find('.remoteBox');
+
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
         $cache.rightSessionCent = $cache.rightCent.find('.session-cent');
@@ -669,11 +673,15 @@ define([
         $cache.win.on('resize', function () {
             limtImgSize();
         });
-        var draggie = new Draggabilly($cache.winImg.get(0), {
+        var draggie1 = new Draggabilly($cache.winImg.get(0), {
             containment: $cache.wrapper.get(0),
             handle: '.win-topbar'
         });
-        draggie = null;
+        var draggie2 = new Draggabilly($cache.winWebrtc.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        draggie1 = draggie2 = null;
         limtImgSize();
     };
 
@@ -1303,6 +1311,19 @@ define([
         return deferred.promise;
     };
 
+    modelRtc.initWebrtc = function(){
+        var video1 = document.createElement('video');
+        video1.autoplay = true;
+        video1.muted = true;
+        video1.src = cache.webMediaUrl;
+        var video2 = document.createElement('video');
+        video2.autoplay = true;
+        video2.muted = true;
+        video2.src = cache.webMediaUrl;
+        $cache.rtcLocalBox.append(video1);
+        $cache.rtcRemoteBox.append(video2);
+        $cache.winWebrtc.show();
+    };
     // 初始化 websocket 连接
     modelSocket.initSocekt = function() {
         var deferred = Q.defer();
@@ -1629,7 +1650,10 @@ define([
             .then(modelSocket.processTransport)
             .then(modelClass.init)
             .then(modelDom.initNoFnBtn)
-            .done(modelDom.dragImg);
+            .done(function(){
+                modelRtc.initWebrtc();
+                modelDom.dragImg();
+            });
     }
 
     init();
