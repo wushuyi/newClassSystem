@@ -361,7 +361,7 @@ define([
             var onReady, view;
             view = options.view;
             onReady = function (view){
-                console.log(view);
+                //console.log(view);
                 self.saveStyle.call(self);
 
                 if(options.width){
@@ -396,9 +396,9 @@ define([
             };
 
             if(typeof view === 'object'){
-                console.log(view.nodeName);
+                //console.log(view.nodeName);
                 if(view.nodeName === 'IMG' || view.nodeName === 'CANVAS'){
-                    console.log('ok');
+                    //console.log('ok');
                     onReady(view);
                 }
             }else if(typeof view === 'string'){

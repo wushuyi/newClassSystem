@@ -473,10 +473,8 @@ define([
             var $self = $(this);
             var quizIndex = +$self.html();
             var quizData = $self.data();
-
             modelDom.rightSessionNeedShow(quizIndex - 1);
             modelDom.leftSessionNeedShow(quizIndex - 1);
-
             $.magnificPopup.open({
                 items: {
                     src: $cache.dataSyncingPop
@@ -494,7 +492,6 @@ define([
                     nowQuiz.boardType = 1;
                     modelClass.initQuiz(dataCache.nowQuiz.quizId)
                         .then(function(){
-                            console.log('imRun');
                             setTimeout(function(){
                                 $.magnificPopup.close();
                             }, 600);
@@ -505,23 +502,47 @@ define([
             var selfIndex = +$cache.rightToolNum.html();
             var quizIdListIndex = selfIndex - 2;
             var quizData = dataCache.quizIdList[quizIdListIndex];
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
             modelDom.rightSessionNeedShow(quizIdListIndex);
             modelDom.leftSessionNeedShow(quizIdListIndex);
             dataCache.nowQuiz.quizId = quizData.quizId;
             dataCache.nowQuiz.index = selfIndex - 1;
             dataCache.nowQuiz.planIndex = selfIndex - 1;
-            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+            modelClass.initQuiz(dataCache.nowQuiz.quizId)
+                .then(function(){
+                    setTimeout(function(){
+                        $.magnificPopup.close();
+                    }, 600);
+                });
         });
         $cache.rightNextBtn.on('click', function(e){
             var selfIndex = +$cache.rightToolNum.html();
             var quizIdListIndex = selfIndex;
             var quizData = dataCache.quizIdList[quizIdListIndex];
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
             modelDom.rightSessionNeedShow(quizIdListIndex);
             modelDom.leftSessionNeedShow(quizIdListIndex);
             dataCache.nowQuiz.quizId = quizData.quizId;
             dataCache.nowQuiz.index = selfIndex + 1;
             dataCache.nowQuiz.planIndex = selfIndex + 1;
-            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+            modelClass.initQuiz(dataCache.nowQuiz.quizId)
+                .then(function(){
+                    setTimeout(function(){
+                        $.magnificPopup.close();
+                    }, 600);
+                });
         });
         // 点击上课听题目 end
 
@@ -583,26 +604,62 @@ define([
             var $self = $(this);
             var quizData = $self.data();
             var quizId = quizData.quizId;
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
             dataCache.nowQuiz.planIndex = +$self.html();
-            modelClass.swichPlan(quizId);
+            modelClass.swichPlan(quizId)
+                .then(function(){
+                    setTimeout(function(){
+                        $.magnificPopup.close();
+                    }, 600);
+                });
         });
         $cache.leftPrevBtn.on('click', function(e){
             var selfIndex = +$cache.leftToolNum.html();
             var quizIdListIndex = selfIndex - 2;
             var quizData = dataCache.quizIdList[quizIdListIndex];
             var quizId = quizData.quizId;
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
             dataCache.nowQuiz.planIndex = quizIdListIndex + 1;
             modelDom.leftSessionNeedShow(quizIdListIndex);
-            modelClass.swichPlan(quizId);
+            modelClass.swichPlan(quizId)
+                .then(function(){
+                    setTimeout(function(){
+                        $.magnificPopup.close();
+                    }, 600);
+                });
         });
         $cache.leftNextBtn.on('click', function(e){
             var selfIndex = +$cache.leftToolNum.html();
             var quizIdListIndex = selfIndex;
             var quizData = dataCache.quizIdList[quizIdListIndex];
             var quizId = quizData.quizId;
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
             dataCache.nowQuiz.planIndex = quizIdListIndex + 1;
             modelDom.leftSessionNeedShow(quizIdListIndex);
-            modelClass.swichPlan(quizId);
+            modelClass.swichPlan(quizId)
+                .then(function(){
+                    setTimeout(function(){
+                        $.magnificPopup.close();
+                    }, 600);
+                });
         });
         // 老师切换教案 end
 
@@ -728,6 +785,7 @@ define([
         callback(msg);
     };
 
+    // 当收到聊天数据
     modelTask.onReceiveMsg = function(data, callback){
         var msg = data;
         dataCache.taskMsg = [];
@@ -981,6 +1039,7 @@ define([
         return deferred.promise;
     };
 
+    // 初始化渲染白板选择
     modelClass.initBlankPage = function(num){
         var htmlTmp = '';
         for(var i = 0; i < num; i++){
@@ -1311,6 +1370,7 @@ define([
         return deferred.promise;
     };
 
+    // 初始化WebRtc
     modelRtc.initWebrtc = function(){
         var video1 = document.createElement('video');
         video1.autoplay = true;
@@ -1324,6 +1384,7 @@ define([
         $cache.rtcRemoteBox.append(video2);
         $cache.winWebrtc.show();
     };
+
     // 初始化 websocket 连接
     modelSocket.initSocekt = function() {
         var deferred = Q.defer();
@@ -1339,6 +1400,7 @@ define([
         return deferred.promise;
     };
 
+    // 清除 clearIndexDb
     modelSocket.clearIndexDb = function(){
         var deferred = Q.defer();
         localforage.keys().then(function(keys){

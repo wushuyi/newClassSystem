@@ -22,6 +22,9 @@
             var img = document.createElement('img'),
                 url,
                 oUrl;
+            if(options.crossOrigin){
+                img.crossOrigin = options.crossOrigin;
+            }
             img.onerror = callback;
             img.onload = function () {
                 if (oUrl && !(options && options.noRevoke)) {

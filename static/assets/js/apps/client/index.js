@@ -3,15 +3,20 @@
  */
 define([
     'jquery',
+    'localforage',
     'qjs',
+    'async',
     'lodashJs',
     'umeditorHf',
     'WSY',
+    'socketIo',
+    'wsy/hf_socket',
     'apps/util/canvas-to-blob',
     'draggabilly',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
+    'dust-temp/classSessionView',
     'wsy/get_offset_point',
     'wsy/hf_canvas_board',
     'wsy/canvas_buff',
@@ -23,28 +28,52 @@ define([
     'loadImageAll'
 ],function(
     $,
+    localforage,
     Q,
+    async,
     _,
     UM,
     WSY,
+    socketIo,
+    io,
     dataURLtoBlob,
     Draggabilly
 ){
     'use strict';
 
-    var util = {},
-        $cache = {},
+    var URL = window.URL;
+
+    var modelGCtl ={},
+        modelUtil ={},
+        modelDom ={},
+        modelTask = {},
+        modelBoard = {},
+        modelRtc = {},
+        modelClass = {},
+        modelSocket = {};
+
+    var $cache = {},
         cache = {},
         jspScrollList = {},
         timerList = {},
         lockCtl = {},
-        localMedia,
-        webMedia,
-        sendMedia;
+        socket,
+        transport = {},
+        dataCache = {};
 
-    $cache.win = $(window);
+    // 初始化全局缓存
+    modelGCtl.init = function(){
+        $cache.win = $(window);
+        dataCache.quizIdIndex = 0;
+        dataCache.quizIdListForServe = null;
+        dataCache.quizIdList = [];
+        dataCache.userInfo = {};
+        dataCache.nowQuiz = {};
+        dataCache.taskMsg = [];
+    };
 
-    util.loadImg2Canvas = function(imgUrl, options){
+    // 加载图片返回Canvas
+    modelUtil.loadImg2Canvas = function (imgUrl, options) {
         var deferred = Q.defer();
         options = options ? options : {
             canvas: true
@@ -52,7 +81,7 @@ define([
         loadImage(
             imgUrl,
             function (canvas) {
-                if(canvas.type === 'error') {
+                if (canvas.type === 'error') {
                     deferred.reject('Error loading image :' + canvas.path[0].src);
                     swal('图片加载错误!', '', 'error');
                 } else {
@@ -65,7 +94,7 @@ define([
     };
 
     // 初始化dom选择缓存
-    function initElement(){
+    modelDom.initElement = function(){
         var deferred = Q.defer();
 
         $cache.wrapper = $('#wrapper');
@@ -77,8 +106,17 @@ define([
         $cache.winImgClose = $cache.winImg.find('.win-close');
         $cache.winImgZoom = $cache.winImg.find('.zoom-img');
 
+        $cache.winWebrtc = $('#win-webrtc');
+        $cache.rtcLocalBox = $cache.winWebrtc.find('.localBox');
+        $cache.rtcRemoteBox = $cache.winWebrtc.find('.remoteBox');
+
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
+
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
+        $cache.leftSessionScrollCent = $cache.leftSessionCent.find('.scroll-cent');
+        $cache.leftSessionScroll = $cache.leftSessionCent.find('.scroll');
+        $cache.blankPages = $cache.leftSessionScroll.find('.add-list .class-list ul');
+
         $cache.sketchpadCent = $cache.leftCent.find('.sketchpad-cent');
 
         $cache.sketchpadScroll = $cache.sketchpadCent.find('.scroll');
@@ -86,9 +124,12 @@ define([
         $cache.leftCentTopBar = $cache.leftCent.find('.topbar');
         $cache.leftCentToolBar = $cache.leftCent.find('.toolbar');
 
+        $cache.leftTitleNum = $cache.leftCentTopBar.find('.title .num');
         $cache.leftPrevBtn =  $cache.leftCentToolBar.find('.prev-btn');
         $cache.leftToolNum = $cache.leftCentToolBar.find('.tool-num');
         $cache.leftNextBtn = $cache.leftCentToolBar.find('.next-btn');
+
+        $cache.addPageBtn = $cache.leftCentToolBar.find('.add-page-btn');
 
         $cache.taskScroll = $cache.taskCent.find('.scroll');
         $cache.taskName = $cache.taskBoxCent.find('.task-name');
@@ -110,13 +151,14 @@ define([
         $cache.upimgViewBox = $cache.upimgPop.find('.view-box');
         $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
+        $cache.dataSyncingPop = $cache.popList.find('.data-syncing-pop');
 
         deferred.resolve();
         return deferred.promise;
     }
 
     // 初始化滚动条
-    function initScrollPane(){
+    modelDom.initScrollPane = function(){
         var deferred = Q.defer();
 
         $cache.win.on('resize', function(){
@@ -142,13 +184,15 @@ define([
         jspScrollList.taskFn = $cache.taskCent.jScrollPane({
             hideFocus: true
         }).data('jsp');
-
+        jspScrollList.leftSessionFn = $cache.leftSessionScrollCent.jScrollPane({
+            hideFocus: true
+        }).data('jsp');
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 初始化按钮事件
-    function initCtlBtn(){
+    modelDom.initCtlBtn = function(){
         var deferred = Q.defer();
         var preventDefault;
         // 阻止默认事件 start
@@ -256,93 +300,281 @@ define([
         });
         // 聊天框图片查看 end
 
+        // 点击上课听题目 start
+        $cache.leftSessionScroll.on('click', 'li.quiz', function (e) {
+            var $self = $(this);
+            var quizIndex = +$self.html();
+            var quizData = $self.data();
+            modelDom.leftSessionNeedShow(quizIndex - 1);
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(modelSocket.uploadQuizData)
+                .done(function(){
+                    var nowQuiz = dataCache.nowQuiz;
+                    nowQuiz.quizId = quizData.quizId;
+                    nowQuiz.index = quizIndex;
+                    nowQuiz.planIndex = quizIndex;
+                    nowQuiz.boardType = 1;
+                    modelClass.initQuiz(dataCache.nowQuiz.quizId)
+                        .then(function(){
+                            console.log('imRun');
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
+        });
+        $cache.leftPrevBtn.on('click', function(e){
+            var selfIndex = +$cache.leftToolNum.html();
+            var quizIdListIndex = selfIndex - 2;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            modelDom.rightSessionNeedShow(quizIdListIndex);
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            dataCache.nowQuiz.quizId = quizData.quizId;
+            dataCache.nowQuiz.index = selfIndex - 1;
+            dataCache.nowQuiz.planIndex = selfIndex - 1;
+            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+        });
+        $cache.leftNextBtn.on('click', function(e){
+            var selfIndex = +$cache.leftToolNum.html();
+            var quizIdListIndex = selfIndex;
+            var quizData = dataCache.quizIdList[quizIdListIndex];
+            modelDom.rightSessionNeedShow(quizIdListIndex);
+            modelDom.leftSessionNeedShow(quizIdListIndex);
+            dataCache.nowQuiz.quizId = quizData.quizId;
+            dataCache.nowQuiz.index = selfIndex + 1;
+            dataCache.nowQuiz.planIndex = selfIndex + 1;
+            modelClass.initQuiz(dataCache.nowQuiz.quizId);
+        });
+        // 点击上课听题目 end
+
+        // 对添加画板的操着 start
+        $cache.addPageBtn.on('click', function(e){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(function(){
+                    dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
+                    dataCache.nowQuiz.boardType = 2;
+                    dataCache.nowQuiz.studyBlankPages.push({
+                        blankPageUrl: '',
+                        blankPageBgUrl: ''
+                    });
+                    modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPages.length);
+                    modelBoard.setSketchpadView(null, null)
+                        .then(function(){
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
+        });
+        $cache.blankPages.on('click', 'li.blank', function(e){
+            var $self = $(this);
+            var data = $self.data();
+            var nowQuiz =  dataCache.nowQuiz;
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(function(){
+                    var blankData;
+                    nowQuiz.studyBlankPagesindex = data.index;
+                    nowQuiz.boardType = 2;
+                    blankData = nowQuiz.studyBlankPages[data.index];
+                    modelBoard.setSketchpadView(blankData.blankPageBgUrl, blankData.blankPageUrl)
+                        .then(function(){
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
+        });
+        // 对添加画板的操着 end
+
         deferred.resolve();
         return deferred.promise;
-    }
+    };
+
+    // 可拖拽图片放大框
+    modelDom.dragImg = function() {
+        function limtImgSize() {
+            var winImg;
+
+            $cache.winImgZoom
+                .css({
+                    'max-width': cache.winW - 2,
+                    'max-height': cache.winH - 32
+                });
+            winImg = {
+                left: +$cache.winImg.css('left').split('px')[0],
+                top: +$cache.winImg.css('top').split('px')[0],
+                width: $cache.winImg.width(),
+                height: $cache.winImg.height()
+            };
+
+            if (winImg.left + winImg.width > cache.winW) {
+                $cache.winImg.css('left', cache.winW - winImg.width);
+            }
+            if (winImg.top + winImg.height > cache.winH) {
+                $cache.winImg.css('top', cache.winH - winImg.height);
+            }
+        }
+
+        $cache.win.on('resize', function () {
+            limtImgSize();
+        });
+        var draggie1 = new Draggabilly($cache.winImg.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        var draggie2 = new Draggabilly($cache.winWebrtc.get(0), {
+            containment: $cache.wrapper.get(0),
+            handle: '.win-topbar'
+        });
+        draggie1 = draggie2 = null;
+        limtImgSize();
+    };
+
+    // 判断左边边上课题目切换显示
+    modelDom.leftSessionNeedShow = function(index){
+        if(index === 0){
+            $cache.leftPrevBtn.hide();
+            $cache.leftNextBtn.show();
+        }else if(index === (dataCache.quizIdList.length - 1)){
+            $cache.leftPrevBtn.show();
+            $cache.leftNextBtn.hide();
+        }else{
+            $cache.leftPrevBtn.show();
+            $cache.leftNextBtn.show();
+        }
+    };
+
+    // 发送聊天数据调用
+    modelTask.onSendMsg = function (data, callback) {
+        var htmlCent, msg;
+        htmlCent = data;
+        if (!htmlCent.length) {
+            return false;
+        }
+        $cache.umMsgBox.html('');
+
+        msg = {userId: dataCache.selfUserId, content: htmlCent};
+        console.log(msg);
+        socket.emit('mFC.reqChatMessages', msg);
+        dataCache.taskMsg.push(msg);
+        callback(msg);
+    };
+
+    // 当收到聊天数据
+    modelTask.onReceiveMsg = function(data, callback){
+        var msg = data;
+        dataCache.taskMsg = [];
+        if($.isArray(msg)){
+            dataCache.taskMsg = dataCache.taskMsg.concat(msg);
+        }else{
+            dataCache.taskMsg.push(msg);
+        }
+        callback(msg);
+    };
+
+    // 聊天渲染完毕回调
+    modelTask.onRenderTaskView = function(data) {
+        var msg;
+        if ($.isArray(data)) {
+            msg = data;
+        } else {
+            msg = [data];
+        }
+        modelTask.renderTaskView(msg)
+            .then(function (data) {
+                var $imgs, imgLen, loadLen;
+                $imgs = $(data).find('img');
+                imgLen = $imgs.size();
+                loadLen = 0;
+                $imgs.each(function (i, img) {
+                    console.log(img);
+                    img.onload = function () {
+                        loadLen += 1;
+                        if (imgLen === loadLen) {
+                            $cache.taskScroll.append(data);
+                            setTimeout(function () {
+                                jspScrollList.taskFn.reinitialise();
+                                jspScrollList.taskFn.scrollToBottom(0.3);
+                            }, 0);
+                        }
+                    };
+                });
+            });
+    };
 
     // 对话框数据渲染
-    function renderTaskView(msgs){
+    modelTask.renderTaskView = function (msgs) {
         var deferred = Q.defer();
-
-        var portraits, datas = [];
-        if(!(msgs instanceof Array)){
+        var datas = [];
+        if (!(msgs instanceof Array)) {
             throw 'msgs must be array!';
         }
-        portraits = [
-            './assets/images/portrait1.png',
-            './assets/images/portrait2.png'
-        ];
-        for(var i = 0, len = msgs.length; i < len; i ++){
-            var data, msg = msgs[i];
-            data = {
-                userType: msg.type,
-                content: msg.msg
-            };
-            if(msg.type === 'self'){
-                data.portrait = portraits[0];
-            }else{
-                data.portrait = portraits[1];
-            }
-            datas.push(data);
-        }
-        dust.render('taskView', {msgs: datas}, function(err, out){
-            if(err){
-                deferred.reject(err);
-            }else{
-                deferred.resolve(out);
-            }
+        async.eachSeries(msgs, function (msg, callback) {
+            //console.log(msg.userId);
+            transport.getUserInfo(msg.userId).then(function (info) {
+                //console.log(info);
+                var data = {};
+                data.portrait = info.headImage;
+                data.content = msg.content;
+                if (+msg.userId === +dataCache.selfUserId) {
+                    //console.log(msg.userId + '"==="' + dataCache.selfUserId);
+                    data.userType = 'self';
+                } else {
+                    data.userType = 'buddy';
+                }
+                datas.push(data);
+                callback();
+            });
+        }, function (err) {
+            console.log(datas);
+            dust.render('taskView', {msgs: datas}, function (err, out) {
+                if (err) {
+                    deferred.reject(err);
+                } else {
+                    deferred.resolve(out);
+                }
+            });
         });
 
         return deferred.promise;
-    }
+    };
 
     // 富文本编辑器初始化事件
-    function initUMEditorEvent(){
+    modelTask.initUMEditorEvent = function() {
         var deferred = Q.defer();
-
-        var onSendMsg;
-        cache.taskMsg = [];
 
         // fix bug send none msg
         $cache.umMsgBox.html('');
 
-        onSendMsg = function(){
-            var cent, msg;
-            cent = $cache.umMsgBox.html();
-            if(!cent.length){
-                return false;
-            }
-            $cache.umMsgBox.html('');
-            msg = {type: 'self', msg: cent};
-            cache.taskMsg.push(msg);
 
-            renderTaskView([msg])
-                .then(function(data){
-                    var $imgs, imgLen, loadLen;
-                    $imgs = $(data).find('img');
-                    imgLen = $imgs.size();
-                    loadLen = 0;
-                    $imgs.each(function(i ,img){
-                        console.log(img);
-                        img.onload = function(){
-                            loadLen +=1;
-                            if(imgLen === loadLen){
-                                $cache.taskScroll.append(data);
-                                setTimeout(function(){
-                                    jspScrollList.taskFn.reinitialise();
-                                    jspScrollList.taskFn.scrollToBottom(0.3);
-                                }, 0);
-                            }
-                        };
-                    });
-                });
-        };
         // 发送按钮
-        $cache.taskSumBtn.on('click', function(e){
-            onSendMsg();
+        $cache.taskSumBtn.on('click', function (e) {
+            var htmlCent = $cache.umMsgBox.html();
+            modelTask.onSendMsg(htmlCent, modelTask.onRenderTaskView);
         });
         // 获取摄像头图片按钮
-        $cache.taskWebcamBtn.on('click', function(e){
+        $cache.taskWebcamBtn.on('click', function (e) {
             $.magnificPopup.open({
                 items: {
                     src: $cache.photoPop
@@ -353,29 +585,29 @@ define([
             $cache.photoBox.attr('src', cache.webMediaUrl);
         });
         // 上传本地图片按钮
-        $cache.taskUploadBtn.find('input[type="file"]').on('change', function(e){
-            var $self,file, blobUrl;
+        $cache.taskUploadBtn.find('input[type="file"]').on('change', function (e) {
+            var $self, file, blobUrl;
             var successLoad, loadImg;
             $self = $(this);
             file = e.target.files[0];
             $self.val('');
-            if(file.type.indexOf('image') === -1){
+            if (file.type.indexOf('image') === -1) {
                 swal('对不起,不支持该文件类型!', '', 'warning');
                 return false;
             }
-            blobUrl = window.URL.createObjectURL(file);
-            successLoad = function(canvas){
+            blobUrl = URL.createObjectURL(file);
+            successLoad = function (canvas) {
                 $cache.upimgViewBox.html(canvas);
                 $cache.upimgPop.width(canvas.width + 40);
                 $.magnificPopup.open({
-                    items:{
+                    items: {
                         src: $cache.upimgPop
                     },
                     type: 'inline',
                     modal: true
                 });
             };
-            loadImg = util.loadImg2Canvas(blobUrl, {
+            loadImg = modelUtil.loadImg2Canvas(blobUrl, {
                 maxWidth: 600,
                 maxHeight: 600,
                 canvas: true
@@ -386,12 +618,11 @@ define([
         });
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
-    // 初始化富文本编辑器
-    function initUMEditor(){
+    modelTask.initUMEditor = function() {
         var deferred = Q.defer();
-        var umReady = function(stat){
+        var umReady = function (stat) {
             var umDom = um.container;
             $cache.um = $(umDom);
             $cache.umTool = $cache.um.find('.edui-btn-toolbar');
@@ -414,10 +645,101 @@ define([
         um.addListener('ready', umReady);
 
         return deferred.promise;
-    }
+    };
 
-    // 初始化画板事件
-    function initSketchpadEvent(){
+    // 上课试题数据渲染
+    modelClass.renderClassSessionView = function(data) {
+        var deferred = Q.defer();
+        var result, quizIdsList, reQuizIdsList, quizId, listObj, quizNum = 0;
+
+        if (!dataCache.quizIdListForServe) {
+            dataCache.quizIdListForServe = data;
+        }
+        for (var i = 0, len = data.quizIdListResults.length; i < len; i++) {
+            result = data.quizIdListResults[i];
+            quizIdsList = result.quizIds;
+            reQuizIdsList = [];
+            for (var j = 0, jlen = quizIdsList.length; j < jlen; j++) {
+                quizId = quizIdsList[j];
+                listObj = {
+                    index: quizNum += 1,
+                    quizId: quizId
+                };
+                reQuizIdsList.push(listObj);
+                dataCache.quizIdList.push(listObj);
+            }
+            result.quizIds = reQuizIdsList;
+        }
+
+        dust.render('classSessionView', data, function (err, out) {
+            if (err) {
+                deferred.reject(err);
+            } else {
+                deferred.resolve(out);
+            }
+        });
+        return deferred.promise;
+    };
+
+    // 上课试题数据UI输出
+    modelClass.showClassSessionView = function(data) {
+        var deferred = Q.defer();
+        modelClass.renderClassSessionView(data)
+            .then(function (data) {
+                $cache.leftSessionScroll.find('.session-list').remove();
+                $cache.leftSessionScroll.find('> ul').prepend(data);
+                jspScrollList.leftSessionFn.reinitialise();
+
+                deferred.resolve();
+            });
+        return deferred.promise;
+    };
+
+    // 通过数据切换题目
+    modelClass.initQuiz = function(quizId) {
+        var deferred = Q.defer();
+        transport.getQuizInfoById(quizId)
+            .then(function (data) {
+                var onSetSketchpadView;
+                dataCache.nowQuiz.quizId = quizId;
+                dataCache.nowQuiz.teacherUrl = data.teacherUrl;
+                dataCache.nowQuiz.studentUrl = data.studentUrl;
+                dataCache.nowQuiz.studyBlankPages = data.studyBlankPages;
+                dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
+                modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPagesindex);
+                //modelDom.setPlanBox(dataCache.nowQuiz.teacherUrl);
+
+                if(data.imageUrl){
+                    onSetSketchpadView = modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl, data.imageUrl);
+                }else{
+                    onSetSketchpadView = modelBoard.setSketchpadView(dataCache.nowQuiz.studentUrl);
+                }
+                onSetSketchpadView.done(function () {
+                    var nowQuizIndex = dataCache.nowQuiz.index;
+                    $cache.leftToolNum.text(nowQuizIndex);
+                    $cache.leftTitleNum.text(nowQuizIndex);
+                    $cache.taskScroll.html('');
+                    if(data.chatRecords.length){
+                        modelTask.onReceiveMsg(data.chatRecords, modelTask.onRenderTaskView);
+                    }
+                    deferred.resolve();
+                });
+            });
+        return deferred.promise;
+    };
+
+    // 初始化渲染白板选择
+    modelClass.initBlankPage = function(num){
+        var htmlTmp = '';
+        for(var i = 0; i < num; i++){
+            htmlTmp += '<li class="blank" data-index="'+i+'">'+(i+1)+'</li>';
+        }
+        $cache.blankPages.html(htmlTmp);
+        jspScrollList.leftSessionFn.reinitialise();
+    };
+
+    // 初始化画布事件
+    modelBoard.initSketchpadEvent = function() {
         var deferred = Q.defer();
 
         var $canvas, myBoard, parentOffset, offsetPoint;
@@ -425,7 +747,7 @@ define([
         $canvas = $cache.sketchpadFg;
         myBoard = cache.Board;
 
-        $cache.sketchpadCent.on('jsp-scroll-y', function(){
+        $cache.sketchpadCent.on('jsp-scroll-y', function () {
             parentOffset = $canvas.offset();
             offsetPoint.setParentOffset(parentOffset);
         });
@@ -441,56 +763,57 @@ define([
             if (e.originalEvent.button === 2) {
                 return false;
             }
-            if(myBoard.isRemoteDraw()){
+            if (myBoard.isRemoteDraw()) {
                 return false;
             }
             var point = offsetPoint.getPoint(e);
-            if(lockCtl.drawType === 'pen'){
+            if (lockCtl.drawType === 'pen') {
                 myBoard.penOnDown(point);
-            }else if(lockCtl.drawType === 'eraser'){
+            } else if (lockCtl.drawType === 'eraser') {
                 myBoard.eraserOnDown(point);
             }
         });
         $canvas.on('mousemove touchmove', function (e) {
             e.preventDefault();
-            if(myBoard.isRemoteDraw()){
+            if (myBoard.isRemoteDraw()) {
                 return false;
             }
             var point = offsetPoint.getPoint(e);
-            if(lockCtl.drawType === 'pen'){
+            if (lockCtl.drawType === 'pen') {
                 myBoard.penOnMove(point);
-            }else if(lockCtl.drawType === 'eraser'){
+            } else if (lockCtl.drawType === 'eraser') {
                 myBoard.eraserOnMove(point);
             }
         });
         $canvas.on('mouseup mouseleave touchend', function (e) {
             e.preventDefault();
-            if(myBoard.isRemoteDraw()){
+            if (myBoard.isRemoteDraw()) {
                 return false;
             }
             var point = offsetPoint.getPoint(e);
-            if(lockCtl.drawType === 'pen'){
+            if (lockCtl.drawType === 'pen') {
                 myBoard.penOnUp(point);
-            }else if(lockCtl.drawType === 'eraser'){
+            } else if (lockCtl.drawType === 'eraser') {
                 myBoard.eraserOnUp(point);
             }
         });
 
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     // 重设画布
-    function setSketchpadView(bgUrl, fgUrl){
+    modelBoard.setSketchpadView = function(bgUrl, fgUrl) {
         var deferred = Q.defer();
 
         var loadBg, loadFg, onLoadAll, sketchpadReady;
-        sketchpadReady = function(canvasBg){
+        sketchpadReady = function (canvasBg) {
+            //console.log('run');
             var $canvas = $(canvasBg);
             canvasBg.className = 'sketchpad-img';
-            if(!$cache.sketchpadBg){
+            if (!$cache.sketchpadBg) {
                 $cache.sketchpadScroll.prepend($canvas);
-            }else{
+            } else {
                 $cache.sketchpadBg.replaceWith($canvas);
             }
             $cache.sketchpadBg = $canvas;
@@ -498,55 +821,95 @@ define([
             jspScrollList.sketchpadFn.reinitialise();
             deferred.resolve();
         };
-        if(bgUrl){
-            loadBg = util.loadImg2Canvas(bgUrl);
+        if (bgUrl) {
+            loadBg = modelUtil.loadImg2Canvas(bgUrl);
+        }
+        if(fgUrl){
+            loadFg = modelUtil.loadImg2Canvas(fgUrl, {
+                canvas: true,
+                crossOrigin: '*'
+            });
         }
 
-        if(fgUrl){
-            onLoadAll = WSY.stepFn(['loadBg', 'loadFg'], function(canvasBg, canvasFg){
+        if (bgUrl && fgUrl) {
+            //alert('run bgUrl && fgUrl');
+            onLoadAll = WSY.stepFn(['loadBg', 'loadFg'], function (canvasBg, canvasFg) {
                 cache.Board.setView({
                     view: canvasFg
-                }, function(){
+                }, function () {
                     sketchpadReady(canvasBg);
                 });
             });
-            loadFg = util.loadImg2Canvas(fgUrl);
             loadBg
-                .then(function(canvas){
+                .then(function (canvas) {
                     onLoadAll('loadBg', canvas);
                 })
-                .fail(function(err){
+                .fail(function (err) {
                     console.error(err);
                 })
                 .done();
             loadFg
-                .then(function(canvas){
+                .then(function (canvas) {
                     onLoadAll('loadFg', canvas);
                 })
-                .fail(function(err){
+                .fail(function (err) {
                     console.error(err);
                 })
                 .done();
-        }else{
+        } else if(bgUrl && !fgUrl){
+            //alert('run bgUrl && !fgUrl');
             loadBg
-                .then(function(canvas){
+                .then(function (canvas) {
                     cache.Board.resizeAndClear({
-                        width: canvas.width,
-                        height: canvas.height
+                        width: canvas.width === 600 ? canvas.width: 600,
+                        height: canvas.height > 1200 ?  canvas.height : 1200
                     });
                     sketchpadReady(canvas);
                 })
-                .fail(function(err){
+                .fail(function (err) {
                     console.error(err);
                 })
                 .done();
+        } else if(!bgUrl && fgUrl){
+            //alert('run !bgUrl && fgUrl');
+            var bgCanvas = $cache.sketchpadBg.get(0);
+            var bgCtx = bgCanvas.getContext('2d');
+            bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
+            bgCanvas.width = 600;
+            bgCanvas.height = 0;
+            loadFg
+                .then(function (canvasFg) {
+                    cache.Board.setView({
+                        view: canvasFg
+                    }, function(){
+                        deferred.resolve();
+                    });
+                })
+                .fail(function (err) {
+                    console.error(err);
+                })
+                .done();
+        } else if(!bgUrl && !fgUrl){
+            //alert('run !bgUrl && !fgUrl');
+            var bgCanvas = $cache.sketchpadBg.get(0);
+            var bgCtx = bgCanvas.getContext('2d');
+            bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
+            bgCanvas.width = 600;
+            bgCanvas.height = 0;
+            cache.Board.resizeAndClear({
+                width: 600,
+                height: 1200
+            });
+            $cache.sketchpadScroll.height($cache.sketchpadFg.height());
+            jspScrollList.sketchpadFn.reinitialise();
+            deferred.resolve();
         }
 
         return deferred.promise;
-    }
+    };
 
     // 初始化画布框
-    function initSketchpadBox(){
+    modelBoard.initSketchpadBox = function() {
         var deferred = Q.defer();
         var Board, canvas2;
         Board = new WSY.hfCanvasBoard({width: 100, height: 100});
@@ -558,24 +921,26 @@ define([
         $cache.sketchpadScroll.html('');
         $cache.sketchpadScroll.append(canvas2);
         jspScrollList.sketchpadFn.reinitialise();
-        Board.onSendBoardData = function(data){console.log(JSON.stringify(data));};
         deferred.resolve();
         return deferred.promise;
-    }
+    };
 
     //媒体测试弹窗
-    function mediaTest(){
+    modelRtc.mediaTest = function() {
         var deferred = Q.defer();
+        $cache.mediaTest.on('loadeddata', function () {
+            $cache.mediaTest.get(0).play();
+        });
         $cache.mediaTest.attr('src', cache.webMediaUrl);
-        $cache.mediaTest.on('contextmenu', function(e){
+        $cache.mediaTest.on('contextmenu', function (e) {
             e.preventDefault();
         });
-        $cache.mediaTestSuccessBtn.click('click', function(e){
+        $cache.mediaTestSuccessBtn.click('click', function (e) {
             $cache.mediaTest.attr('src', '');
             $.magnificPopup.close();
             deferred.resolve();
         });
-        $cache.mediaTestErrorBtn.click('click', function(e){
+        $cache.mediaTestErrorBtn.click('click', function (e) {
             $cache.mediaTestSuccessBtn.hide();
             swal('请调整设备, 或联系老师!', '', 'warning');
         });
@@ -587,156 +952,390 @@ define([
             modal: true
         });
         return deferred.promise;
-    }
+    };
 
     // 初始化媒体测试
-    function detectRTCInit(){
+    modelRtc.detectRTCInit =function() {
         var deferred = Q.defer();
-        DetectRTC.load(function(){
-            if(!DetectRTC.browser.isChrome){
+        DetectRTC.load(function () {
+            if (!DetectRTC.browser.isChrome) {
                 swal('对不起,浏览器版本不兼容!', '请使用Google Chrome浏览器!', 'error');
                 $cache.mediaTestSuccessBtn.hide();
                 return false;
             }
-            if(!DetectRTC.isWebRTCSupported){
+            if (!DetectRTC.isWebRTCSupported) {
                 swal('您的浏览器无法支持WebRTC!', '', 'error');
                 $cache.mediaTestSuccessBtn.hide();
                 return false;
             }
-            if(!DetectRTC.hasWebcam){
+            if (!DetectRTC.hasWebcam) {
                 swal('无法检测到您的摄像头!', '', 'error');
                 $cache.mediaTestSuccessBtn.hide();
                 return false;
             }
-            if(!DetectRTC.hasMicrophone){
+            if (!DetectRTC.hasMicrophone) {
                 swal('无法检测到您的麦克风!', '', 'error');
                 $cache.mediaTestSuccessBtn.hide();
                 return false;
             }
             getUserMedia({
-                onsuccess: function(media){
-                    localMedia = media;
-                    sendMedia = media.clone();
-                    webMedia = media.clone();
-                    cache.webMediaUrl = URL.createObjectURL(webMedia);
+                onsuccess: function (media) {
+                    cache.localMedia = media;
+                    cache.cloneMedia = media.clone();
+                    cache.webMediaUrl = URL.createObjectURL(cache.cloneMedia);
                     deferred.resolve();
-
-                    window.localMedia = localMedia;
-                    window.sendMedia = sendMedia;
                 }
             });
         });
         return deferred.promise;
-    }
+    };
 
-    // 可拖拽图片放大框
-    function dragImg(){
-        function limtImgSize(){
-            var winImg;
+    // 初始化WebRtc
+    modelRtc.initWebrtc = function(){
+        var video1 = document.createElement('video');
+        video1.autoplay = true;
+        video1.muted = true;
+        video1.src = cache.webMediaUrl;
+        var video2 = document.createElement('video');
+        video2.autoplay = true;
+        video2.muted = true;
+        video2.src = cache.webMediaUrl;
+        $cache.rtcLocalBox.append(video1);
+        $cache.rtcRemoteBox.append(video2);
+        $cache.winWebrtc.show();
+    };
 
-            $cache.winImgZoom
-                .css({
-                    'max-width': cache.winW - 2,
-                    'max-height': cache.winH - 32
+
+    // 清除 clearIndexDb
+    modelSocket.clearIndexDb = function(){
+        var deferred = Q.defer();
+        localforage.keys().then(function(keys){
+            async.forEachSeries(keys,
+                function(key, callback){
+                    localforage.removeItem(key)
+                        .then(function(){
+                            callback();
+                        });
+                },
+                function(){
+                    deferred.resolve();
                 });
-            winImg = {
-                left : + $cache.winImg.css('left').split('px')[0],
-                top: + $cache.winImg.css('top').split('px')[0],
-                width: $cache.winImg.width(),
-                height: $cache.winImg.height()
-            };
+        });
+        return deferred.promise;
+    };
 
-            if(winImg.left + winImg.width > cache.winW){
-                $cache.winImg.css('left',  cache.winW - winImg.width);
-            }
-            if(winImg.top + winImg.height > cache.winH){
-                $cache.winImg.css('top', cache.winH - winImg.height);
-            }
-        }
-        $cache.win.on('resize', function(){
-            limtImgSize();
+    // 初始化 websocket 连接
+    modelSocket.initSocekt = function() {
+        var deferred = Q.defer();
+        socket = io(socketIo, 'http://192.168.1.92:10010/');
+        socket.once('connect', function () {
+            socket.on('error', function (data) {
+                swal('服务器出现错误!', data.emit + ': ' + data.info, 'error');
+            });
+            setTimeout(function () {
+                deferred.resolve();
+            }, 600);
         });
-        var draggie = new Draggabilly($cache.winImg.get(0), {
-            containment: $cache.wrapper.get(0),
-            handle: '.win-topbar'
+        return deferred.promise;
+    };
+
+    // 初始化交互接口
+    modelSocket.initTransport = function() {
+        var accessToken = '6fb4ae97-1b4a-4af6-9823-a90b8762602e';
+        transport.login = function () {
+            var deferred = Q.defer();
+            socket.once('uC.resLogin', function (data) {
+                if (data.status !== 'success') {
+                    deferred.reject();
+                } else {
+                    deferred.resolve();
+                }
+            });
+            socket.emit('uC.reqLogin', {
+                accessToken: accessToken
+            });
+            return deferred.promise;
+        };
+        transport.getUserId = function () {
+            var deferred = Q.defer();
+            socket.once('uC.resGetUserId', function (data) {
+                deferred.resolve(data);
+            });
+            socket.emit('uC.reqGetUserId');
+            return deferred.promise;
+        };
+        transport.getUserInfo = function (userId) {
+            var deferred = Q.defer();
+            var cacheUserInfo = dataCache.userInfo[userId];
+            if (cacheUserInfo) {
+                deferred.resolve(cacheUserInfo);
+            } else {
+                socket.once('uC.resGetUserInfo', function (data) {
+                    data.userId = userId;
+                    dataCache.userInfo[userId] = data;
+                    deferred.resolve(data);
+                });
+                socket.emit('uC.reqGetUserInfo', {
+                    userId: userId
+                });
+            }
+            return deferred.promise;
+        };
+        transport.inRoom = function () {
+            var deferred = Q.defer();
+            socket.once('uC.resInRoom', function (data) {
+                if (data.status !== 'success') {
+                    deferred.reject();
+                } else {
+                    deferred.resolve();
+                }
+            });
+            socket.emit('uC.reqInRoom');
+            return deferred.promise;
+        };
+        transport.classList = function () {
+            var deferred = Q.defer();
+            socket.once('qC.resClassList', function (data) {
+                deferred.resolve(data);
+            });
+            socket.emit('qC.reqClassList');
+            return deferred.promise;
+        };
+        transport.getQuizInfoById = function (quizId) {
+            var deferred = Q.defer();
+            localforage.getItem('quizId-' + quizId)
+                .then(function(cacheQuizIdInfo){
+                    if(cacheQuizIdInfo){
+                        deferred.resolve(cacheQuizIdInfo);
+                    }else{
+                        socket.once('qC.resGetQuizInfoById', function (data) {
+                            localforage.setItem('quizId-'+quizId, data)
+                                .then(function(){
+                                    deferred.resolve(data);
+                                });
+                        });
+                        socket.emit('qC.reqGetQuizInfoById', {
+                            quizId: quizId
+                        });
+                    }
+                });
+            return deferred.promise;
+        };
+        transport.upLoadToken = function () {
+            var deferred = Q.defer();
+            socket.once('dHC.resUploadToken', function (data) {
+                deferred.resolve(data);
+            });
+            socket.emit('dHC.reqUploadToken');
+            return deferred.promise;
+        };
+    };
+
+    // 对交互接口的逻辑处理
+    modelSocket.processTransport = function() {
+        var deferred = Q.defer();
+        transport.login()
+            .then(transport.getUserId, function () {
+                swal('服务器链接错误!', '', 'error');
+            })
+            .then(function (data) {
+                dataCache.selfUserId = data;
+            })
+            .then(transport.inRoom)
+            .then(function () {
+                transport.classList()
+                    .then(function (data) {
+                        modelClass.showClassSessionView(data)
+                            .then(function () {
+                                socket.on('mFC.resChatMessages', function (data) {
+                                    modelTask.onRenderTaskView(data);
+                                    dataCache.taskMsg.push(data);
+                                });
+                                socket.on('mFC.resBoardDraw', function (data) {
+                                    console.log(data);
+                                    cache.Board.onReceiveBoardData(data.draw);
+                                });
+                                cache.Board.onSendBoardData = function (data) {
+                                    socket.emit('mFC.reqBoardDraw', {
+                                        draw: data
+                                    });
+                                };
+                                deferred.resolve();
+                            });
+                    });
+            });
+
+        return deferred.promise;
+    };
+
+    // 上传二进制对象到七牛
+    modelSocket.uploadBlobToQN = function(blob) {
+        var deferred = Q.defer();
+        transport.upLoadToken()
+            .then(function (data) {
+                console.log(data);
+                var token, key, form;
+
+                token = data.token;
+                key = data.key;
+                form = new FormData();
+
+                form.append('file', blob, key);
+                form.append('token', token);
+                //alert('run');
+                $.ajax({
+                    url: 'http://upload.qiniu.com/',
+                    type: 'POST',
+                    data: form,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    forceSync: false,
+                    xhr: function () {
+                        var xhrobj = $.ajaxSettings.xhr();
+                        if (xhrobj.upload) {
+                            xhrobj.upload.addEventListener('progress', function (ev) {
+                                var percent = 0;
+                                var position = ev.loaded || ev.position;
+                                var total = ev.total || ev.totalSize;
+                                if (ev.lengthComputable) {
+                                    percent = Math.ceil(position / total * 100);
+                                }
+                                console.log(percent);
+                                deferred.notify(percent);
+                            }, false);
+                        }
+                        return xhrobj;
+                    },
+                    success: function (data) {
+                        var upImgUrl = 'http://hyphen.qiniudn.com/' + data.key;
+                        deferred.resolve(upImgUrl);
+                    },
+                    error: function () {
+                        deferred.reject(arguments);
+                    }
+                });
+            });
+        return deferred.promise;
+    };
+
+    // 上传当前题目画布
+    modelClass.uploadQuizFg = function(){
+        var deferred = Q.defer();
+        cache.Board._canvas.canvas.toBlob(function(blob){
+            modelSocket.uploadBlobToQN(blob)
+                .then(function(data){
+                    var nowQuiz = dataCache.nowQuiz;
+                    if(nowQuiz.boardType === 1){
+                        //alert('1');
+                        nowQuiz.imageUrl = data;
+                    }else if(dataCache.nowQuiz.boardType === 2){
+                        //alert('2');
+                        nowQuiz.studyBlankPages[nowQuiz.studyBlankPagesindex].blankPageUrl = data;
+                        console.log(nowQuiz.studyBlankPages[nowQuiz.studyBlankPagesindex]);
+                    }
+                    deferred.resolve();
+                });
         });
-        draggie = null;
-        limtImgSize();
-    }
+        return deferred.promise;
+    };
+
+    // 上传当前数据
+    modelSocket.uploadQuizData =  function() {
+        var deferred = Q.defer();
+        var upData = {
+            quizId: dataCache.nowQuiz.quizId,
+            chatRecords: dataCache.taskMsg,
+            imageUrl: dataCache.nowQuiz.imageUrl,
+            studyBlankPages: dataCache.nowQuiz.studyBlankPages
+        };
+
+        modelSocket.saveQuizDataLocal(upData)
+            .then(function(){
+                socket.on('dHC.resSaveQuizInfo', function(data){
+                    if(data.status === 'success'){
+                        deferred.resolve();
+                    }else{
+                        deferred.reject();
+                    }
+                });
+                socket.emit('dHC.reqSaveQuizInfo', upData);
+            });
+
+        return deferred.promise;
+    };
+
+    // 保存本地上课数据到本地indexDB
+    modelSocket.saveQuizDataLocal = function(upData){
+        var deferred = Q.defer();
+        var dbKey = 'quizId-' + upData.quizId;
+        console.log(dbKey);
+        localforage.getItem(dbKey)
+            .then(function(data){
+                console.log(data);
+                data.chatRecords = upData.chatRecords;
+                data.imageUrl = upData.imageUrl;
+                data.studyBlankPages = upData.studyBlankPages;
+                localforage.setItem(dbKey, data)
+                    .then(function(){
+                        deferred.resolve();
+                    });
+            });
+        return deferred.promise;
+    };
+
+    // 初始化上课数据
+    modelClass.init = function(){
+        var deferred = Q.defer();
+        var quizInitData = dataCache.quizIdList[0];
+        dataCache.nowQuiz.quizId = quizInitData.quizId;
+        dataCache.nowQuiz.index = 1;
+        dataCache.nowQuiz.planIndex = 1;
+        dataCache.nowQuiz.boardType = 1;
+        modelDom.leftSessionNeedShow(dataCache.nowQuiz.index - 1);
+        modelClass.initQuiz(quizInitData.quizId)
+            .then(function () {
+                deferred.resolve();
+            });
+        return deferred.promise;
+    };
 
     // 初始化
-    (function init(){
+    function init() {
+        modelGCtl.init();
         cache.winW = $cache.win.width();
         cache.winH = $cache.win.height();
-        $cache.win.on('resize', function(){
+        $cache.win.on('resize', function () {
             cache.winW = $cache.win.width();
             cache.winH = $cache.win.height();
         });
-        detectRTCInit()
-            .then(initElement)
-            .then(DetectRTC)
-            .then(mediaTest)
-            .then(initScrollPane)
-            .then(initCtlBtn)
-            .then(initUMEditor)
-            .then(initUMEditorEvent)
-            .then(initSketchpadBox)
-            .then(initSketchpadEvent)
-            .then(function(){
-                return Q.Promise(function(resolve, reject, notify){
-                    var testImg = './assets/images/width600.png';
-                    setSketchpadView(testImg)
-                        .done(function(){
-                            resolve();
-                        });
-                });
-            })
+
+        modelRtc.detectRTCInit()
+            .then(modelDom.initElement)
+            .then(modelRtc.DetectRTC)
+            .then(modelRtc.mediaTest)
+            .then(modelDom.initScrollPane)
+            .then(modelDom.initCtlBtn)
+            .then(modelTask.initUMEditor)
+            .then(modelTask.initUMEditorEvent)
+            .then(modelBoard.initSketchpadBox)
+            .then(modelBoard.initSketchpadEvent)
+            .then(modelBoard.initSketchpadCtl)
+            .then(modelSocket.clearIndexDb)
+            .then(modelSocket.initSocekt)
+            .then(modelSocket.initTransport)
+            .then(modelSocket.processTransport)
+            .then(modelClass.init)
             .done(function(){
-                dragImg();
+                modelRtc.initWebrtc();
+                modelDom.dragImg();
             });
-    })();
+    }
 
+    init();
 
-    //// object to global debug
-    //window.jspScrollList = jspScrollList;
-    //window.$cache = $cache;
-    //window.cache = cache;
-    //
-    //window.initSketchpadBox = initSketchpadBox;
-    //
-    //window.dataURLtoBlob = dataURLtoBlob;
-    //
-    //// 对话框数据渲染测试
-    //function taskViewTest(){
-    //    var msgs = [
-    //        {type: 'buddy', msg: 'test1'},
-    //        {type: 'self', msg: 'test2'},
-    //        {type: 'buddy', msg: 'test3'},
-    //        {type: 'buddy', msg: 'test4'},
-    //        {type: 'self', msg: 'test5'},
-    //        {type: 'buddy', msg: 'test6'},
-    //        {type: 'self', msg: '<img class="input-img" src="./assets/images/beastie.png">'}
-    //    ];
-    //    renderTaskView(msgs)
-    //        .then(function(data){
-    //            var $imgs, imgLen, loadLen;
-    //            $cache.taskScroll.append(data);
-    //            $imgs = $(data).find('img');
-    //            imgLen = $imgs.size();
-    //            loadLen = 0;
-    //            $imgs.each(function(i ,img){
-    //                img.onload = function(){
-    //                    loadLen +=1;
-    //                    if(imgLen === loadLen){
-    //                        setTimeout(function(){
-    //                            jspScrollList.taskFn.reinitialise();
-    //                            jspScrollList.taskFn.scrollToBottom(0.3);
-    //                        }, 0);
-    //                    }
-    //                };
-    //            });
-    //        });
-    //}
-    //
-    //window.taskViewTest = taskViewTest;
+    function debug(){
+        window.$cache = $cache;
+    }
+    window.debug = debug;
 });
