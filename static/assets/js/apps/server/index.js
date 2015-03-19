@@ -424,14 +424,7 @@ define([
                 $cache.answerBtn.trigger('answerLock');
             }
         });
-        //$cache.addPageBtn.on('click', function (e) {
-        //    var myBoard, canvasEl;
-        //    myBoard = cache.Board;
-        //    myBoard.addPartitionPage({});
-        //    canvasEl = myBoard.getCanvas();
-        //    $cache.sketchpadScroll.height(canvasEl.height);
-        //    jspScrollList.sketchpadFn.reinitialise();
-        //});
+
         $cache.leftToolNum.on('click', function (e) {
             if (lockCtl.leftSessionCent) {
                 $cache.leftSessionCent.hide();
@@ -487,11 +480,14 @@ define([
                 type: 'inline',
                 modal: true
             });
-            modelSocket.uploadQuizData()
-                .then(function(){
-                    dataCache.nowQuiz.quizId = quizData.quizId;
-                    dataCache.nowQuiz.index = quizIndex;
-                    dataCache.nowQuiz.planIndex = quizIndex;
+            modelClass.uploadQuizFg()
+                .then(modelSocket.uploadQuizData)
+                .done(function(){
+                    var nowQuiz = dataCache.nowQuiz;
+                    nowQuiz.quizId = quizData.quizId;
+                    nowQuiz.index = quizIndex;
+                    nowQuiz.planIndex = quizIndex;
+                    nowQuiz.boardType = 1;
                     modelClass.initQuiz(dataCache.nowQuiz.quizId)
                         .then(function(){
                             console.log('imRun');
@@ -523,12 +519,62 @@ define([
             dataCache.nowQuiz.planIndex = selfIndex + 1;
             modelClass.initQuiz(dataCache.nowQuiz.quizId);
         });
-        $cache.addPageBtn.on('click', function(e){
-            dataCache.nowQuiz.studyBlankPages.push({});
-            $cache.blankPages.append('<li>'+dataCache.nowQuiz.studyBlankPages.length+'</li>');
-            jspScrollList.rightSessionFn.reinitialise();
-        });
         // 点击上课听题目 end
+
+        // 对添加画板的操着 start
+        $cache.addPageBtn.on('click', function(e){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(function(){
+                    dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
+                    dataCache.nowQuiz.boardType = 2;
+                    dataCache.nowQuiz.studyBlankPages.push({
+                        blankPageUrl: '',
+                        blankPageBgUrl: ''
+                    });
+                    modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPages.length);
+                    modelBoard.setSketchpadView(null, null)
+                        .then(function(){
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
+        });
+        $cache.blankPages.on('click', 'li.blank', function(e){
+            var $self = $(this);
+            var data = $self.data();
+            var nowQuiz =  dataCache.nowQuiz;
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(function(){
+                    var blankData;
+                    nowQuiz.studyBlankPagesindex = data.index;
+                    nowQuiz.boardType = 2;
+                    blankData = nowQuiz.studyBlankPages[data.index];
+                    modelBoard.setSketchpadView(blankData.blankPageBgUrl, blankData.blankPageUrl)
+                        .then(function(){
+                            setTimeout(function(){
+                                $.magnificPopup.close();
+                            }, 600);
+                        });
+                });
+        });
+        // 对添加画板的操着 end
+
+        // 老师切换教案 start
         $cache.leftSessionScroll.on('click', 'li.quiz', function (e) {
             var $self = $(this);
             var quizData = $self.data();
@@ -554,15 +600,11 @@ define([
             modelDom.leftSessionNeedShow(quizIdListIndex);
             modelClass.swichPlan(quizId);
         });
-        // 老师切换教案 start
-
         // 老师切换教案 end
 
         deferred.resolve();
         return deferred.promise;
     };
-
-
 
     // 对没有功能的按钮 做提示处理
     modelDom.initNoFnBtn = function () {
@@ -906,7 +948,8 @@ define([
                 dataCache.nowQuiz.teacherUrl = data.teacherUrl;
                 dataCache.nowQuiz.studentUrl = data.studentUrl;
                 dataCache.nowQuiz.studyBlankPages = data.studyBlankPages;
-
+                dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
+                modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPagesindex);
                 modelDom.setPlanBox(dataCache.nowQuiz.teacherUrl);
 
                 if(data.imageUrl){
@@ -928,6 +971,15 @@ define([
                     });
             });
         return deferred.promise;
+    };
+
+    modelClass.initBlankPage = function(num){
+        var htmlTmp = '';
+        for(var i = 0; i < num; i++){
+            htmlTmp += '<li class="blank" data-index="'+i+'">'+(i+1)+'</li>';
+        }
+        $cache.blankPages.html(htmlTmp);
+        jspScrollList.rightSessionFn.reinitialise();
     };
 
     // 通过数据切换教案
@@ -1085,18 +1137,21 @@ define([
         if (bgUrl) {
             loadBg = modelUtil.loadImg2Canvas(bgUrl);
         }
+        if(fgUrl){
+            loadFg = modelUtil.loadImg2Canvas(fgUrl, {
+                canvas: true,
+                crossOrigin: '*'
+            });
+        }
 
-        if (fgUrl) {
+        if (bgUrl && fgUrl) {
+            //alert('run bgUrl && fgUrl');
             onLoadAll = WSY.stepFn(['loadBg', 'loadFg'], function (canvasBg, canvasFg) {
                 cache.Board.setView({
                     view: canvasFg
                 }, function () {
                     sketchpadReady(canvasBg);
                 });
-            });
-            loadFg = modelUtil.loadImg2Canvas(fgUrl, {
-                canvas: true,
-                crossOrigin: '*'
             });
             loadBg
                 .then(function (canvas) {
@@ -1114,11 +1169,12 @@ define([
                     console.error(err);
                 })
                 .done();
-        } else {
+        } else if(bgUrl && !fgUrl){
+            //alert('run bgUrl && !fgUrl');
             loadBg
                 .then(function (canvas) {
                     cache.Board.resizeAndClear({
-                        width: canvas.width,
+                        width: canvas.width === 600 ? canvas.width: 600,
                         height: canvas.height > 1200 ?  canvas.height : 1200
                     });
                     sketchpadReady(canvas);
@@ -1127,6 +1183,39 @@ define([
                     console.error(err);
                 })
                 .done();
+        } else if(!bgUrl && fgUrl){
+            //alert('run !bgUrl && fgUrl');
+            var bgCanvas = $cache.sketchpadBg.get(0);
+            var bgCtx = bgCanvas.getContext('2d');
+            bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
+            bgCanvas.width = 600;
+            bgCanvas.height = 0;
+            loadFg
+                .then(function (canvasFg) {
+                    cache.Board.setView({
+                        view: canvasFg
+                    }, function(){
+                        deferred.resolve();
+                    });
+                })
+                .fail(function (err) {
+                    console.error(err);
+                })
+                .done();
+        } else if(!bgUrl && !fgUrl){
+            //alert('run !bgUrl && !fgUrl');
+            var bgCanvas = $cache.sketchpadBg.get(0);
+            var bgCtx = bgCanvas.getContext('2d');
+            bgCtx.clearRect(0,0, bgCanvas.width, bgCanvas.height);
+            bgCanvas.width = 600;
+            bgCanvas.height = 0;
+            cache.Board.resizeAndClear({
+                width: 600,
+                height: 1200
+            });
+            $cache.sketchpadScroll.height($cache.sketchpadFg.height());
+            jspScrollList.sketchpadFn.reinitialise();
+            deferred.resolve();
         }
 
         return deferred.promise;
@@ -1250,9 +1339,9 @@ define([
     modelSocket.initTransport = function() {
         var accessToken;
         if (location.pathname.indexOf('server1.html') !== -1) {
-            accessToken = '37a6c0d8-b175-45d0-8ef8-d66191e226e3';
+            accessToken = '6fb4ae97-1b4a-4af6-9823-a90b8762602e';
         } else {
-            accessToken = '70b642d7-55f1-4a8b-a77a-c7ac7aecf865';
+            accessToken = 'fa30ba32-a24a-4f56-b9e9-6ec81e77cfd2';
         }
         transport.login = function () {
             var deferred = Q.defer();
@@ -1431,32 +1520,49 @@ define([
         return deferred.promise;
     };
 
-    //  上传当前数据
+    // 上传当前题目画布
+    modelClass.uploadQuizFg = function(){
+        var deferred = Q.defer();
+        cache.Board._canvas.canvas.toBlob(function(blob){
+            modelSocket.uploadBlobToQN(blob)
+                .then(function(data){
+                    var nowQuiz = dataCache.nowQuiz;
+                    if(nowQuiz.boardType === 1){
+                        //alert('1');
+                        nowQuiz.imageUrl = data;
+                    }else if(dataCache.nowQuiz.boardType === 2){
+                        //alert('2');
+                        nowQuiz.studyBlankPages[nowQuiz.studyBlankPagesindex].blankPageUrl = data;
+                        console.log(nowQuiz.studyBlankPages[nowQuiz.studyBlankPagesindex]);
+                    }
+                    deferred.resolve();
+                });
+        });
+        return deferred.promise;
+    };
+
+    // 上传当前数据
     modelSocket.uploadQuizData =  function() {
         var deferred = Q.defer();
         var upData = {
             quizId: dataCache.nowQuiz.quizId,
             chatRecords: dataCache.taskMsg,
-            blankPageUrl: []
+            imageUrl: dataCache.nowQuiz.imageUrl,
+            studyBlankPages: dataCache.nowQuiz.studyBlankPages
         };
-        cache.Board._canvas.canvas.toBlob(function (blob) {
-            modelSocket.uploadBlobToQN(blob)
-                .then(function (data) {
-                    upData.imageUrl = data;
-                    console.log(upData);
-                    modelSocket.saveQuizDataLocal(upData)
-                        .then(function(){
-                            socket.on('dHC.resSaveQuizInfo', function(data){
-                                if(data.status === 'success'){
-                                    deferred.resolve();
-                                }else{
-                                    deferred.reject();
-                                }
-                            });
-                            socket.emit('dHC.reqSaveQuizInfo', upData);
-                        });
+
+        modelSocket.saveQuizDataLocal(upData)
+            .then(function(){
+                socket.on('dHC.resSaveQuizInfo', function(data){
+                    if(data.status === 'success'){
+                        deferred.resolve();
+                    }else{
+                        deferred.reject();
+                    }
                 });
-        });
+                socket.emit('dHC.reqSaveQuizInfo', upData);
+            });
+
         return deferred.promise;
     };
 
@@ -1470,7 +1576,7 @@ define([
                 console.log(data);
                 data.chatRecords = upData.chatRecords;
                 data.imageUrl = upData.imageUrl;
-                data.blankPageUrl = upData.blankPageUrl;
+                data.studyBlankPages = upData.studyBlankPages;
                 localforage.setItem(dbKey, data)
                     .then(function(){
                         deferred.resolve();
@@ -1486,6 +1592,7 @@ define([
         dataCache.nowQuiz.quizId = quizInitData.quizId;
         dataCache.nowQuiz.index = 1;
         dataCache.nowQuiz.planIndex = 1;
+        dataCache.nowQuiz.boardType = 1;
         modelDom.rightSessionNeedShow(dataCache.nowQuiz.index - 1);
         modelDom.leftSessionNeedShow(dataCache.nowQuiz.index - 1);
         modelClass.initQuiz(quizInitData.quizId)
