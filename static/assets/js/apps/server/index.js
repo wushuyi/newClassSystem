@@ -44,7 +44,7 @@ define([
     var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
     var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     var URL = window.URL || window.webkitURL;
-    var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    var RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 
     var modelGCtl ={},
         modelUtil ={},
@@ -1314,7 +1314,7 @@ define([
         $cache.mediaTest.on('loadeddata', function () {
             $cache.mediaTest.get(0).play();
         });
-        $cache.mediaTest.attr('src', cache.webMediaUrl);
+        $cache.mediaTest.attr('src', cache.localMediaUrl);
         $cache.mediaTest.on('contextmenu', function (e) {
             e.preventDefault();
         });
@@ -1365,7 +1365,7 @@ define([
                 onsuccess: function (media) {
                     cache.localMedia = media;
                     cache.cloneMedia = media.clone();
-                    cache.webMediaUrl = URL.createObjectURL(cache.cloneMedia);
+                    cache.localMediaUrl = URL.createObjectURL(cache.cloneMedia);
                     deferred.resolve();
                 }
             });
@@ -1377,9 +1377,10 @@ define([
     modelRtc.initWebrtc = function(){
         var localVideo = document.createElement('video');
         var remoteVideo = document.createElement('video');
+        var pc, dc;
         localVideo.autoplay = true;
         localVideo.muted = true;
-        localVideo.src = cache.localMedia;
+        localVideo.src = cache.localMediaUrl;
         remoteVideo.autoplay = true;
         remoteVideo.muted = true;
         var iceServers = {
@@ -1392,28 +1393,128 @@ define([
                 {url: 'stun:217.10.68.152:10000'}
             ]
         };
-        var pc = new RTCPeerConnection(iceServers, { optional: [{ RtpDataChannels: true}] });
+
+        function onAddStream(e){
+            console.log('webrtc ok');
+            cache.remoteMedia = e.stream;
+            cache.remoteMediaUrl =  URL.createObjectURL(cache.remoteMedia);
+            remoteVideo.src = cache.remoteMediaUrl;
+        }
+
+        function onIceCandidate(e) {
+            if(e && e.candidate){
+                console.log(e.candidate);
+                socket.emit('mFC.reqRtcIce', e.candidate);
+            }
+        }
+
+        function onDataChannel(e) {
+            console.log('data channel ok');
+            var channel = e.channel;
+            dc = channel;
+            initDCEvents();
+        }
+
+        function initDCEvents(){
+            console.log('onDataChannel: ', dc);
+            dc.onmessage = function (e) {
+                console.log(e);
+            };
+            dc.onopen = function (e) {
+                window.dc = dc;
+                window.pc = pc;
+                addStream(cache.localMedia);
+                console.log('DEBUG: [PEER] DataChannel opened', dc);
+            };
+            dc.onclose = function (e) {
+                console.log('DEBUG: [PEER] DataChannel closed');
+            };
+            dc.onerror = function (e) {
+                console.log('ERROR: [PEER] DataChannel', e);
+            };
+        }
+        function call(){
+            socket.emit('mFC.reqRtcConn');
+        }
+        window.call = call;
+        function hang(){
+            pc.close();
+            socket.emit('mFC.reqRtcClose');
+        }
+        function createOffer(){
+            dc = pc.createDataChannel('RTCDataChannel', {reliable: false});
+            pc.createOffer(onCreateOffer, function(e){
+                console.log(e);
+            });
+            initDCEvents();
+        }
+        function onCreateOffer(offer){
+            pc.setLocalDescription(offer, function(){
+                socket.emit('mFC.reqRtcOffer', offer);
+            });
+        }
+        function setOffer(offer){
+            var offerAnswerConstraints = {
+                optional: [],
+                mandatory: {
+                    OfferToReceiveAudio: true,
+                    OfferToReceiveVideo: true
+                }
+            };
+            var error = function(){
+                console.log(arguments);
+            };
+            pc.setRemoteDescription(new RTCSessionDescription(offer), function(){
+                pc.createAnswer(onCreateAnswer, error, offerAnswerConstraints);
+            });
+        }
+        function onCreateAnswer(answer) {
+            pc.setLocalDescription(answer, function(){
+                socket.emit('mFC.reqRtcAnswer', answer);
+            });
+        }
+        function setAnswer(answer){
+            console.log(answer);
+            pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+        function addStream(stream){
+            pc.addStream(stream);
+        }
+        function setIce(e){
+            if(e && e.candidate){
+                pc.addIceCandidate(new RTCIceCandidate(e));
+            }
+        }
+        function onOpen(){
+            console.log('pc open');
+        }
+        function closePc(){
+            pc.close();
+        }
+        function initPeerEvents(){
+            pc.addEventListener('addstream', onAddStream);
+            pc.addEventListener('icecandidate', onIceCandidate);
+            pc.addEventListener('open', onOpen);
+            pc.addEventListener('datachannel', onDataChannel);
+        }
+        function initSocket(){
+            socket.on('mFC.resRtcConn', createOffer);
+            socket.on('mFC.resRtcOffer', setOffer);
+            socket.on('mFC.resRtcAnswer', setAnswer);
+            socket.on('mFC.resRtcIce', setIce);
+            socket.on('mFC.resRtcClose', closePc);
+        }
+
+        pc = new RTCPeerConnection(iceServers, { optional: [{ RtpDataChannels: true}] });
         pc.oniceconnectionstatechange = function(e){
             console.log(arguments);
         };
         pc.onsignalingstatechange = function(e){
             console.log(arguments);
         };
-        pc.onaddstream = function(e){
-            remoteVideo.src = URL.createObjectURL(e.stream);
-            remoteVideo.addEventListener('loadedmetadata', function() {
+        initSocket();
+        initPeerEvents();
 
-            });
-        };
-        pc.onicecandidate = function(e){
-
-        };
-        pc.onopen = function(e){
-
-        };
-        pc.ondatachannel = function(e){
-
-        };
         $cache.rtcLocalBox.append(localVideo);
         $cache.rtcRemoteBox.append(remoteVideo);
         $cache.winWebrtc.show();
