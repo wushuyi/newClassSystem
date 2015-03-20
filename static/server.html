@@ -72,7 +72,13 @@
                 <div class="tool-btn next-btn"></div>
             </div>
             <div class="session-cent">
+                <div class="scroll-cent">
+                    <div class="scroll">
+                        <ul>
 
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="right-cent">
@@ -108,22 +114,6 @@
                 <div class="scroll-cent">
                     <div class="scroll">
                         <ul>
-                            <li class="list session-list">
-                                <span class="class-name">三级知识点假字八九十一二</span>
-
-                                <div class="class-list">
-                                    <ul>
-                                        <li class="action">1</li>
-                                        <li>2</li>
-                                        <li>3</li>
-                                        <li>4</li>
-                                        <li>5</li>
-                                        <li>6</li>
-
-                                    </ul>
-                                </div>
-                            </li>
-
                             <li class="list add-list">
                                 <span class="class-name">自定义白板</span>
 
@@ -145,6 +135,7 @@
                     </div>
                 </div>
             </div>
+            <div id="sketchpad-lock"></div>
         </div>
         <div id="task-box-cent">
             <div class="task-topbar">
@@ -187,24 +178,6 @@
                     <span class="raty-top-num">1/2</span>
                 </div>
                 <div class="pop-box-mid">
-                    <ul>
-                        <li>
-                            <span class="raty-tit">知识点 1</span>
-                            <div class="raty"></div>
-                        </li>
-                        <li>
-                            <span class="raty-tit">知识点 2</span>
-                            <div class="raty"></div>
-                        </li>
-                        <li>
-                            <span class="raty-tit">知识点 3</span>
-                            <div class="raty"></div>
-                        </li>
-                        <li>
-                            <span class="raty-tit">知识点 4</span>
-                            <div class="raty"></div>
-                        </li>
-                    </ul>
                 </div>
                 <div class="pop-box-btm">
                     <button class="btn btn-primary raty-confirm-btn">　确认　</button>
@@ -261,14 +234,32 @@
                     <button class="btn btn-warning upimg-cancel-btn">　取消　</button>
                 </div>
             </div>
+            <div class="pop-box data-syncing-pop">
+                <div class="pop-box-mid">
+                    <h1>数据同步中...</h1>
+                </div>
+            </div>
         </div>
     </div>
-    <div id="win-img">
+    <div id="win-img" class="win-box">
         <div class="win-topbar">
             <div class="win-close"></div>
         </div>
         <div class="win-cent">
             <img class="zoom-img" src=""/>
+        </div>
+    </div>
+    <div id="win-webrtc" class="win-box">
+        <div class="win-topbar">
+            <div class="win-close"></div>
+        </div>
+        <div class="win-cent">
+            <div class="remoteBox">
+
+            </div>
+            <div class="localBox">
+
+            </div>
         </div>
     </div>
 </div>

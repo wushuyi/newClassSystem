@@ -159,17 +159,31 @@
   padding-left: 0;
   width: 20px;
 }
+#left-cent .prev-btn,
+#right-cent .prev-btn {
+  position: absolute;
+  float: none;
+  right: 100px;
+}
+#left-cent .next-btn,
+#right-cent .next-btn {
+  position: absolute;
+  float: none;
+  right: 10px;
+}
 #left-cent .tool-num,
 #right-cent .tool-num {
   width: 50px;
   cursor: pointer;
-  float: left;
   height: 28px;
   line-height: 28px;
   color: #747474;
   text-align: center;
   margin: 12px 0 8px 0;
   font-size: 24px;
+  float: none;
+  right: 48px;
+  position: absolute;
 }
 #left-cent .sound-btn,
 #right-cent .sound-btn {
@@ -712,7 +726,10 @@
 .upimg-pop .upimg-upload-btn {
   margin-right: 20px;
 }
-/* Media queries
--------------------------------------------------------------------------------*/
-/* Print styles
--------------------------------------------------------------------------------*/
+#sketchpad-lock {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 50px;
+}

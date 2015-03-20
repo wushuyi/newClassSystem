@@ -150,16 +150,29 @@
     padding-left: 0;
     width: 20px;
   }
+  .prev-btn{
+    position: absolute;
+    float: none;
+    right: 100px;
+  }
+  .next-btn{
+    position: absolute;
+    float: none;
+    right: 10px;
+  }
   .tool-num{
     width: 50px;
     cursor: pointer;
-    float: left;
+//    float: left;
     height: 28px;
     line-height: 28px;
     color: #747474;
     text-align: center;
     margin: 12px 0 8px 0;
     font-size: 24px;
+    float: none;
+    right: 48px;
+    position: absolute;
   }
   .sound-btn{
     padding-left: 0;
@@ -714,20 +727,10 @@
   }
 }
 
-/* Media queries
--------------------------------------------------------------------------------*/
-
-@media screen and (max-width: 480px) {
-	
-		
-}
-
-
-
-/* Print styles
--------------------------------------------------------------------------------*/
-@media print {
-
-
-
+#sketchpad-lock{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 50px;
 }

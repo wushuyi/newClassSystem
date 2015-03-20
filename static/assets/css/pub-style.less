@@ -784,7 +784,7 @@ input[type="submit"].btn.btn-mini {
 .edui-popup .edui-popup-body{
     border: none;
 }
-#win-img{
+.win-box{
   position: absolute;
   z-index: 1000;
   top: 0;
@@ -815,6 +815,36 @@ input[type="submit"].btn.btn-mini {
   .win-cent{
     padding: 1px;
     text-align: center;
+  }
+}
+#win-img{
+
+}
+
+#win-webrtc{
+//  display: block;
+  .win-cent{
+    width: 400px;
+    height: 300px;
+    position: relative;
+  }
+  .localBox{
+    width: 120px;
+    height: 90px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+  .remoteBox{
+    width: 400px;
+    height: 300px;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  video{
+    width: 100%;
+    height: 100%;
   }
 }
 

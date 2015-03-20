@@ -1,12 +1,12 @@
 {# quizIdListResults}
-<li class="list session-list">
-    <span class="class-name">{knowledgeName}</span>
-    <div class="class-list">
-        <ul>
-            {# quizIds}
-            <li class="quiz" data-quiz-id="{quizId}">{index}</li>
-            {/ quizIds}
-        </ul>
-    </div>
-</li>
+    <li class="list session-list">
+        <span class="class-name">{knowledgeName}</span>
+        <div class="class-list">
+            <ul>
+                {# quizIds}
+                    <li class="quiz" data-quiz-id="{quizId}">{index}</li>
+                {/ quizIds}
+            </ul>
+        </div>
+    </li>
 {/ quizIdListResults}
