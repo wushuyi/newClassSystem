@@ -147,8 +147,8 @@ define([
             boardCtl.isDown = true;
             boardCtl.drawType = 'pen';
             ctx.beginPath();
-            ctx.moveTo(point.x, point.y);
-            ctx.lineTo(point.x + 1, point.y + 1);
+            ctx.lineTo(point.x, point.y);
+            //ctx.lineTo(point.x + 1, point.y + 1);
             ctx.stroke();
             if (!isRemote) {
                 point.m = 1;

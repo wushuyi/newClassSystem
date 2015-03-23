@@ -165,57 +165,85 @@ define([
 
     // 题目切换回调
     modelClass.selectQuizCallbcak = function(quizIndex , quizId, isRemote){
+        var stepFn = new WSY.stepFn(['localOk', 'remoteOk'], function(){
+            setTimeout(function(){
+                $.magnificPopup.close();
+            }, 200);
+        });
+        socket.once('mFC.resAsyncOk', function(){
+            stepFn('remoteOk');
+        });
         if(!isRemote){
-            socket.emit('mFC.reqSwitchTopics', {
-                quizIndex: quizIndex,
-                quizId: quizId
-            });
+            socket.emit('mFC.reqAsyncNeed');
         }
         modelDom.leftSessionNeedShow(quizIndex - 1);
-        $.magnificPopup.open({
-            items: {
-                src: $cache.dataSyncingPop
-            },
-            type: 'inline',
-            modal: true
-        });
-        var nowQuiz = dataCache.nowQuiz;
-        nowQuiz.quizId = quizId;
-        nowQuiz.index = quizIndex;
-        nowQuiz.planIndex = quizIndex;
-        nowQuiz.boardType = 1;
-        modelClass.initQuiz(dataCache.nowQuiz.quizId)
+        if(!isRemote){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        }
+        modelSocket.saveSyncData()
             .then(function(){
-                setTimeout(function(){
-                    $.magnificPopup.close();
-                }, 600);
+                var nowQuiz = dataCache.nowQuiz;
+                nowQuiz.quizId = quizId;
+                nowQuiz.index = quizIndex;
+                nowQuiz.planIndex = quizIndex;
+                nowQuiz.boardType = 1;
+                if(!isRemote){
+                    socket.emit('mFC.reqSwitchTopics', {
+                        quizIndex: quizIndex,
+                        quizId: quizId
+                    });
+                }
+                modelClass.initQuiz(dataCache.nowQuiz.quizId)
+                    .then(function(){
+                        socket.emit('mFC.reqAsyncOk');
+                        stepFn('localOk');
+                    });
             });
     };
 
     // 切换白板回调
     modelClass.swichBlankPagesCallBack = function(blankPagesIndex, isRemote){
+        var stepFn = new WSY.stepFn(['localOk', 'remoteOk'], function(){
+            setTimeout(function(){
+                $.magnificPopup.close();
+            }, 200);
+        });
+        socket.once('mFC.resAsyncOk', function(){
+            stepFn('remoteOk');
+        });
+        if(!isRemote){
+            socket.emit('mFC.reqAsyncNeed');
+        }
+
+        var nowQuiz =  dataCache.nowQuiz;
+        if(!isRemote){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        }
         if(!isRemote){
             socket.emit('mFC.reqSwitchBlankPages', {
                 blankPagesIndex: blankPagesIndex
             });
         }
-        var nowQuiz =  dataCache.nowQuiz;
-        $.magnificPopup.open({
-            items: {
-                src: $cache.dataSyncingPop
-            },
-            type: 'inline',
-            modal: true
-        });
         var blankData;
         nowQuiz.studyBlankPagesindex = blankPagesIndex;
         nowQuiz.boardType = 2;
         blankData = nowQuiz.studyBlankPages[blankPagesIndex];
         modelBoard.setSketchpadView(blankData.blankPageBgUrl, blankData.blankPageUrl)
             .then(function(){
-                setTimeout(function(){
-                    $.magnificPopup.close();
-                }, 600);
+                socket.emit('mFC.reqAsyncOk');
+                stepFn('localOk');
             });
     };
 
@@ -245,6 +273,44 @@ define([
                 }, 600);
             });
     };
+
+    // 结束课程
+    modelClass.initExitClass = function(){
+        socket.on('mFC.resClassNeedExit', function(data){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.remarkPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        });
+        $cache.remarkPop.find('.raty').raty({
+            numberMax: 5,
+            path: 'assets/images/',
+            starOff: 'off.png',
+            starOn: 'on.png',
+            hints: ['1', '2', '3', '4', '5']
+        });
+        $cache.remarkConfirmBtn.one('click', function(e){
+            var data, raty, remark;
+            raty = $cache.remarkPop.find('.raty input').val();
+            remark = $cache.remarkPop.find('.remark').val();
+            data = {
+                studentId: dataCache.selfUserId,
+                stuToTeaScore: raty,
+                stuToTeaEvaluate: remark
+            };
+            socket.once('dHC.resStuExitRoom', function(data){
+                swal('提交成功!', '', 'success');
+                $.magnificPopup.close();
+            });
+            socket.emit('dHC.reqStuExitRoom', data);
+            $.magnificPopup.close();
+            swal('提交成功!', '', 'success');
+        });
+    };
+    window.initExitClass = modelClass.initExitClass;
 
     // 初始化滚动条
     modelDom.initScrollPane = function(){
@@ -297,13 +363,6 @@ define([
         $cache.photoBox.on('contextmenu', preventDefault);
         // 阻止默认事件 end
 
-        // 结束课程 start
-        $cache.remarkConfirmBtn.on('click', function(e){
-            $.magnificPopup.close();
-            swal('提交成功!', '', 'success');
-        });
-        // 结束课程 end
-
         // 获取摄像头图片上传 start
         $cache.photoCancelBtn.on('click', function(e){
             $.magnificPopup.close();
@@ -349,9 +408,17 @@ define([
             var canvas;
             canvas = $cache.upimgViewBox.find('canvas').get(0);
             canvas.toBlob(function(blob){
-                //console.log(blob);
-                // wait add code...
-                $.magnificPopup.close();
+                console.log(blob);
+                modelSocket.uploadBlobToQN(blob)
+                    .then(function (imgSrc) {
+                        var htmlCent = '<img class="input-img" src="' + imgSrc + '">';
+                        modelTask.onSendMsg(htmlCent, modelTask.onRenderTaskView);
+                        $.magnificPopup.close();
+                    }, function () {
+                        console.log(arguments);
+                    }, function (progress) {
+                        console.log(progress);
+                    });
             });
         });
         $cache.upimgCancelBtn.on('click', function(e){
@@ -598,7 +665,7 @@ define([
                 type: 'inline',
                 modal: true
             });
-            $cache.photoBox.attr('src', cache.webMediaUrl);
+            $cache.photoBox.attr('src', cache.localMediaUrl);
         });
         // 上传本地图片按钮
         $cache.taskUploadBtn.find('input[type="file"]').on('change', function (e) {
@@ -720,6 +787,7 @@ define([
                 dataCache.nowQuiz.quizId = quizId;
                 dataCache.nowQuiz.teacherUrl = data.teacherUrl;
                 dataCache.nowQuiz.studentUrl = data.studentUrl;
+                dataCache.nowQuiz.imageUrl = data.imageUrl;
                 dataCache.nowQuiz.studyBlankPages = data.studyBlankPages;
                 dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
                 modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPagesindex);
@@ -752,6 +820,18 @@ define([
         }
         $cache.blankPages.html(htmlTmp);
         jspScrollList.leftSessionFn.reinitialise();
+    };
+
+    // 初始化画布远程控制
+    modelBoard.initRemoteCtl = function(){
+        var myBoard = cache.Board;
+        socket.on('mFC.resBoardControl', function(data){
+            if(data.type === 'pen'){
+                if(data.data.color){
+                    myBoard.setStyle('strokeStyle', data.data.color);
+                }
+            }
+        });
     };
 
     // 初始化画布事件
@@ -814,6 +894,8 @@ define([
             }
         });
 
+        myBoard.setStyle('lineWidth', 1.4);
+        myBoard.setStyle('lineCap', 'round');
         deferred.resolve();
         return deferred.promise;
     };
@@ -1187,7 +1269,7 @@ define([
     // 初始化 websocket 连接
     modelSocket.initSocekt = function() {
         var deferred = Q.defer();
-        socket = io(socketIo, 'http://192.168.1.92:10010/');
+        socket = io(socketIo, 'http://192.168.1.109:10010/');
         socket.once('connect', function () {
             socket.on('error', function (data) {
                 swal('服务器出现错误!', data.emit + ': ' + data.info, 'error');
@@ -1201,7 +1283,19 @@ define([
 
     // 初始化交互接口
     modelSocket.initTransport = function() {
-        var accessToken = '6fb4ae97-1b4a-4af6-9823-a90b8762602e';
+        var accessToken = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
+        var onSyncData = function(data){
+            var syncData =data;
+            var nowQuiz = dataCache.nowQuiz;
+            if(syncData.boardType === 1){
+                //alert('ok 1');
+                nowQuiz.imageUrl = syncData.imageUrl;
+            }else if(syncData.boardType === 2){
+                //alert('ok 2');
+                nowQuiz.studyBlankPages[syncData.index].blankPageUrl = syncData.imageUrl;
+            }
+
+        };
         transport.login = function () {
             var deferred = Q.defer();
             socket.once('uC.resLogin', function (data) {
@@ -1298,13 +1392,26 @@ define([
             }
         });
         socket.on('mFC.resSwitchTopics', function(data){
+            var syncData = data.syncData;
+            onSyncData(syncData);
             modelClass.selectQuizCallbcak(data.quizIndex , data.quizId, true);
         });
         socket.on('mFC.resSwitchBlankPages', function(data){
+            var syncData = data.syncData;
+            onSyncData(syncData);
             modelClass.swichBlankPagesCallBack(data.blankPagesIndex, true);
         });
         socket.on('mFC.resAddBlankPage', function(data){
             modelClass.addBlankPageCallBack(true);
+        });
+        socket.on('mFC.resAsyncNeed', function(data){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
         });
     };
 
@@ -1442,6 +1549,23 @@ define([
         return deferred.promise;
     };
 
+    // 保存同步数据到本地
+    modelSocket.saveSyncData = function(){
+        var deferred = Q.defer();
+        var upData = {
+            quizId: dataCache.nowQuiz.quizId,
+            chatRecords: dataCache.taskMsg,
+            imageUrl: dataCache.nowQuiz.imageUrl,
+            studyBlankPages: dataCache.nowQuiz.studyBlankPages
+        };
+        modelSocket.saveQuizDataLocal(upData)
+            .then(function(){
+                deferred.resolve();
+            });
+
+        return deferred.promise;
+    };
+
     // 保存本地上课数据到本地indexDB
     modelSocket.saveQuizDataLocal = function(upData){
         var deferred = Q.defer();
@@ -1506,6 +1630,8 @@ define([
             .done(function(){
                 modelRtc.initWebrtc();
                 modelDom.dragImg();
+                modelClass.initExitClass();
+                modelBoard.initRemoteCtl();
             });
     }
 
@@ -1513,6 +1639,7 @@ define([
 
     function debug(){
         window.$cache = $cache;
+        window.dataCache = dataCache;
     }
     window.debug = debug;
 });

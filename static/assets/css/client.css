@@ -411,6 +411,23 @@
   float: right;
   color: #B1B1B1;
 }
+.remark-pop .raty-box {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.remark-pop .raty-tit {
+  font-size: 18px;
+  line-height: 100px;
+  float: left;
+  margin-left: 36px;
+}
+.remark-pop .raty {
+  cursor: pointer;
+  float: left;
+  margin-top: 40px;
+  margin-left: 40px;
+}
 .remark-pop .remark-tit {
   font-size: 18px;
   line-height: 100px;
