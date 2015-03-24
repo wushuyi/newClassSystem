@@ -30,6 +30,7 @@ define([
                 }
             });
         };
+        thisFn();
     };
 
     getTokenFnDebug = function(callback){
