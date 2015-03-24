@@ -1822,6 +1822,27 @@ define([
             });
         });
         socket.on('onClose.resPleaseSaveClass', function(data){
+            var stepFn = new WSY.stepFn(['locateOk', 'remoteOk'], function(){
+                $.magnificPopup.close();
+            });
+            var saveCurrQuizIdCallBack = function(msg){
+                swal({
+                    title: msg,
+                    type: 'success'
+                }, function(){
+                    $.magnificPopup.open({
+                        items: {
+                            src: $cache.linkErrorHoldingPop
+                        },
+                        type: 'inline',
+                        modal: true
+                    });
+                    stepFn('locateOk');
+                });
+            };
+            socket.once('mFC.resInitOK', function(){
+                stepFn('remoteOk');
+            });
             $.magnificPopup.open({
                 items: {
                     src: $cache.dataSyncingPop
@@ -1832,20 +1853,6 @@ define([
             modelClass.uploadQuizFg()
                 .then(modelSocket.uploadQuizData)
                 .done(function(){
-                    var saveCurrQuizIdCallBack = function(msg){
-                        swal({
-                            title: msg,
-                            type: 'success'
-                        }, function(){
-                            $.magnificPopup.open({
-                                items: {
-                                    src: $cache.linkErrorHoldingPop
-                                },
-                                type: 'inline',
-                                modal: true
-                            });
-                        });
-                    };
                     socket.once('qC.resSaveCurrQuizId', function(data){
                         if (data.status !== 'success') {
                             $.magnificPopup.close();
@@ -1858,7 +1865,6 @@ define([
                     socket.emit('qC.reqSaveCurrQuizId', {
                         currQuizId: dataCache.nowQuiz.quizId
                     });
-
                 });
         });
         config.getToken(function(Token){

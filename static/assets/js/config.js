@@ -50,5 +50,6 @@ define([
     serverToken = '2a02dc23-bdb1-4c40-9b35-40009e0bc4bb';
     clientToken = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
     config.WsServer = 'http://192.168.1.109:10010/';
+    config.endCLassUrl = 'https://www.baidu.com/';
     return config;
 });
