@@ -872,3 +872,9 @@ input[type="submit"].btn.btn-mini {
 .session-cent .list .class-list li.action {
   border: 1px solid #3498DB;
 }
+.data-syncing-pop .sync-tit {
+  font-size: 40px;
+}
+.system-init-error .error-init {
+  font-size: 20px;
+}

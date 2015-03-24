@@ -197,6 +197,7 @@ define([
         $cache.upimgUploadBtn = $cache.upimgPop.find('.upimg-upload-btn');
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
         $cache.dataSyncingPop = $cache.popList.find('.data-syncing-pop');
+        $cache.systemInitErrorPop = $cache.popList.find('.system-init-error');
 
         deferred.resolve();
         return deferred.promise;
@@ -550,7 +551,6 @@ define([
                         console.log(progress);
                     });
             });
-
         });
         // 获取摄像头图片上传 end
 
@@ -1450,28 +1450,41 @@ define([
         return deferred.promise;
     };
 
+    // 无法媒体设备不正常
+    modelRtc.detectRTCError = function(msg){
+        swal({
+            title: msg,
+            type: 'error'
+        }, function(){
+            $cache.mediaTestSuccessBtn.hide();
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.systemInitErrorPop
+                },
+                type: 'inline',
+                modal: true
+            });
+        });
+    };
+
     // 初始化媒体测试
     modelRtc.detectRTCInit =function() {
         var deferred = Q.defer();
         DetectRTC.load(function () {
-            if (!DetectRTC.browser.isChrome) {
-                swal('对不起,浏览器版本不兼容!', '请使用Google Chrome浏览器!', 'error');
-                $cache.mediaTestSuccessBtn.hide();
+            if (DetectRTC.browser.isChrome !== true) {
+                modelRtc.detectRTCError('对不起,浏览器版本不兼容!');
                 return false;
             }
-            if (!DetectRTC.isWebRTCSupported) {
-                swal('您的浏览器无法支持WebRTC!', '', 'error');
-                $cache.mediaTestSuccessBtn.hide();
+            if (DetectRTC.isWebRTCSupported !== true) {
+                modelRtc.detectRTCError('您的浏览器无法支持WebRTC!');
                 return false;
             }
-            if (!DetectRTC.hasWebcam) {
-                swal('无法检测到您的摄像头!', '', 'error');
-                $cache.mediaTestSuccessBtn.hide();
+            if (DetectRTC.hasWebcam !== true) {
+                modelRtc.detectRTCError('无法检测到您的摄像头!');
                 return false;
             }
-            if (!DetectRTC.hasMicrophone) {
-                swal('无法检测到您的麦克风!', '', 'error');
-                $cache.mediaTestSuccessBtn.hide();
+            if (DetectRTC.hasMicrophone !== true) {
+                modelRtc.detectRTCError('无法检测到您的麦克风!');
                 return false;
             }
             getUserMedia({
@@ -1741,6 +1754,9 @@ define([
         transport.classList = function () {
             var deferred = Q.defer();
             socket.once('qC.resClassList', function (data) {
+                if(data.currQuizId){
+                    dataCache.currQuizId = data.currQuizId;
+                }
                 deferred.resolve(data);
             });
             socket.emit('qC.reqClassList');
@@ -1800,6 +1816,32 @@ define([
                 type: 'inline',
                 modal: true
             });
+        });
+        socket.on('onClose.resPleaseSaveClass', function(data){
+            $.magnificPopup.open({
+                items: {
+                    src: $cache.dataSyncingPop
+                },
+                type: 'inline',
+                modal: true
+            });
+            modelClass.uploadQuizFg()
+                .then(modelSocket.uploadQuizData)
+                .done(function(){
+                    socket.once('qC.resSaveCurrQuizId', function(data){
+                        if (data.status !== 'success') {
+                            $.magnificPopup.close();
+                            swal('网络断线保持题目失败!', '', 'error');
+                        } else {
+                            $.magnificPopup.close();
+                            swal('网络断线保持题目完成!', '', 'success');
+                        }
+                    });
+                    socket.emit('qC.reqSaveCurrQuizId', {
+                        currQuizId: dataCache.nowQuiz.quizId
+                    });
+
+                });
         });
     };
 
@@ -1969,15 +2011,22 @@ define([
     // 初始化上课数据
     modelClass.init = function(){
         var deferred = Q.defer();
-        var quizInitData = dataCache.quizIdList[0];
-        dataCache.nowQuiz.quizId = quizInitData.quizId;
+        if(dataCache.currQuizId){
+            dataCache.nowQuiz.quizId = dataCache.currQuizId;
+        }else{
+            var quizInitData = dataCache.quizIdList[0];
+            dataCache.nowQuiz.quizId = quizInitData.quizId;
+        }
         dataCache.nowQuiz.index = 1;
         dataCache.nowQuiz.planIndex = 1;
         dataCache.nowQuiz.boardType = 1;
         modelDom.rightSessionNeedShow(dataCache.nowQuiz.index - 1);
         modelDom.leftSessionNeedShow(dataCache.nowQuiz.index - 1);
-        modelClass.initQuiz(quizInitData.quizId)
+        modelClass.initQuiz(dataCache.nowQuiz.quizId)
             .then(function () {
+                if(dataCache.currQuizId){
+                    socket.emit('mFC.reqInitOK');
+                }
                 deferred.resolve();
             });
         return deferred.promise;
@@ -1993,8 +2042,9 @@ define([
             cache.winH = $cache.win.height();
         });
 
-        modelRtc.detectRTCInit()
-            .then(modelDom.initElement)
+
+        modelDom.initElement()
+            .then(modelRtc.detectRTCInit)
             .then(modelRtc.DetectRTC)
             .then(modelRtc.mediaTest)
         //modelDom.initElement()
