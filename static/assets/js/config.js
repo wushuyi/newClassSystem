@@ -25,7 +25,7 @@ define([
                 },
                 error: function(){
                     setTimeout(function(){
-                        thisFn(callback);
+                        thisFn();
                     }, 1000);
                 }
             });
