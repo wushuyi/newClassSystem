@@ -8,7 +8,7 @@ define([
 ){
     'use strict';
     var config = {};
-    var getTokenFnRelease, getTokenFnDebug;
+    var getTokenFnRelease, getTokenFnDebug, serverToken, clientToken;
 
     getTokenFnRelease = function(callback){
         var thisFn,lessonPlanId;
@@ -37,15 +37,17 @@ define([
         isServer = location.pathname.indexOf('server.html') !== -1;
         isClient = location.pathname.indexOf('client.html') !== -1;
         if(isServer){
-            token =  '2a02dc23-bdb1-4c40-9b35-40009e0bc4bb';
+            token =  serverToken;
         }
         if(isClient){
-            token = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
+            token = clientToken;
         }
         callback(token);
     };
 
-    config.WsServer = 'http://192.168.1.109:10010/';
     config.getToken = getTokenFnDebug;
+    serverToken = '2a02dc23-bdb1-4c40-9b35-40009e0bc4bb';
+    clientToken = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
+    config.WsServer = 'http://192.168.1.109:10010/';
     return config;
 });
