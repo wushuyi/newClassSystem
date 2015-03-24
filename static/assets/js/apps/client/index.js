@@ -1118,6 +1118,9 @@ define([
                     cache.cloneMedia = media.clone();
                     cache.localMediaUrl = URL.createObjectURL(cache.cloneMedia);
                     deferred.resolve();
+                },
+                onerror: function() {
+                    modelRtc.detectRTCError('程序没有权限请求媒体数据!');
                 }
             });
         });
