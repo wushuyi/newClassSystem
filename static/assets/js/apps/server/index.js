@@ -479,8 +479,13 @@ define([
                 scores: ratyValList
             };
             socket.once('dHC.resTeaExitRoom', function(data){
-                swal('提交成功!', '', 'success');
                 $.magnificPopup.close();
+                swal({
+                    title: '提交成功!',
+                    type: 'success'
+                }, function(){
+                    location.href = config.endCLassUrl;
+                });
             });
             socket.emit('dHC.reqTeaExitRoom', data);
         });
@@ -908,7 +913,7 @@ define([
                 imgLen = $imgs.size();
                 loadLen = 0;
                 $imgs.each(function (i, img) {
-                    console.log(img);
+                    //console.log(img);
                     img.onload = function () {
                         loadLen += 1;
                         if (imgLen === loadLen) {
@@ -1517,7 +1522,6 @@ define([
         remoteVideo.muted = false;
         var iceServers = {
             'iceServers': [
-                //{url: "turn:turn.wushuyi.com"}
                 {url: 'stun:stun.l.google.com:19302'},
                 {url: 'stun:stun.sipgate.net'},
                 {url: 'stun:217.10.68.152'},
@@ -1532,12 +1536,12 @@ define([
                 console.log('remoteVideo is ok!');
             });
         }
-        function onIceCandidate(e) {
+        function onIceCandidate(e){
             if(e && e.candidate){
                 socket.emit('mFC.reqRtcIce', e.candidate);
             }
         }
-        function onDataChannel(e) {
+        function onDataChannel(e){
             var channel = e.channel;
             window.dc = dc = channel;
             initDCEvents();
@@ -1562,7 +1566,6 @@ define([
                 console.log('ERROR: [PEER] DataChannel', e);
             };
         }
-
         function createOffer(){
             window.dc = dc = pc.createDataChannel('RTCDataChannel', {reliable: false});
             pc.createOffer(onCreateOffer, function(e){
@@ -1608,16 +1611,12 @@ define([
                 pc.addIceCandidate(new RTCIceCandidate(e));
             }
         }
-        function onOpen(){
-            console.log('pc ok!');
-        }
         function closePc(){
             pc.close();
         }
         function initPeerEvents(){
             pc.addEventListener('addstream', onAddStream);
             pc.addEventListener('icecandidate', onIceCandidate);
-            pc.addEventListener('open', onOpen);
             pc.addEventListener('datachannel', onDataChannel);
         }
         function initSocket(){
@@ -1629,7 +1628,7 @@ define([
         }
         initSocket();
 
-        window.pc = pc = new RTCPeerConnection(iceServers, { optional: [{ RtpDataChannels: true}] });
+        window.pc = pc = new RTCPeerConnection(iceServers, {optional: [{ RtpDataChannels: true}] });
         pc.oniceconnectionstatechange = function(e){
             console.log(arguments);
         };
@@ -1795,7 +1794,7 @@ define([
             return deferred.promise;
         };
         socket.on('mFC.resAnswerLock', function(data){
-            console.log(data);
+            //console.log(data);
             if(data.data === 'unLock'){
                 $cache.sketchpadLock.show();
             }else if(data.data === 'lock'){

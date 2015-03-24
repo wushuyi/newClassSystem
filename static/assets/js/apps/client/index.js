@@ -43,7 +43,7 @@ define([
 ){
     'use strict';
 
-    console.log(config);
+    //console.log(config);
     var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
     var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     var URL = window.URL || window.webkitURL;
@@ -308,8 +308,13 @@ define([
                 stuToTeaEvaluate: remark
             };
             socket.once('dHC.resStuExitRoom', function(data){
-                swal('提交成功!', '', 'success');
                 $.magnificPopup.close();
+                swal({
+                    title: '提交成功!',
+                    type: 'success'
+                }, function(){
+                    location.href = config.endCLassUrl;
+                });
             });
             socket.emit('dHC.reqStuExitRoom', data);
             $.magnificPopup.close();
@@ -617,7 +622,7 @@ define([
                 imgLen = $imgs.size();
                 loadLen = 0;
                 $imgs.each(function (i, img) {
-                    console.log(img);
+                    //console.log(img);
                     img.onload = function () {
                         loadLen += 1;
                         if (imgLen === loadLen) {
@@ -1142,7 +1147,6 @@ define([
         remoteVideo.muted = false;
         var iceServers = {
             'iceServers': [
-                //{url: "turn:turn.wushuyi.com"}
                 {url: 'stun:stun.l.google.com:19302'},
                 {url: 'stun:stun.sipgate.net'},
                 {url: 'stun:217.10.68.152'},
@@ -1232,16 +1236,12 @@ define([
                 pc.addIceCandidate(new RTCIceCandidate(e));
             }
         }
-        function onOpen(){
-            console.log('pc ok!');
-        }
         function closePc(){
             pc.close();
         }
         function initPeerEvents(){
             pc.addEventListener('addstream', onAddStream);
             pc.addEventListener('icecandidate', onIceCandidate);
-            pc.addEventListener('open', onOpen);
             pc.addEventListener('datachannel', onDataChannel);
         }
         function initSocket(){

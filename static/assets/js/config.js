@@ -35,7 +35,7 @@ define([
 
     getTokenFnDebug = function(callback){
         var token, isServer, isClient;
-        isServer = location.pathname.indexOf('server.html') !== -1;
+        isServer = location.pathname.indexOf('service.html') !== -1;
         isClient = location.pathname.indexOf('client.html') !== -1;
         if(isServer){
             token =  serverToken;
@@ -46,10 +46,18 @@ define([
         callback(token);
     };
 
+
+    // 发布时注释,debug时拥有改成静态 token
+    //serverToken = '95addfcb-3b22-4945-80ac-2190205bb4ea';
+    //clientToken = '44e3e7d7-b518-4b68-b771-4330db3bbdf9';
+
+    // 发布时为 getTokenFnDebug, debug 时为 getTokenFnDebug
     config.getToken = getTokenFnDebug;
-    serverToken = '2a02dc23-bdb1-4c40-9b35-40009e0bc4bb';
-    clientToken = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
+
+    // WebSocket 服务器地址(注意:是 http 协议头)
     config.WsServer = 'http://192.168.1.109:10010/';
+
+    // 结束上课跳转页面设置
     config.endCLassUrl = 'https://www.baidu.com/';
     return config;
 });
