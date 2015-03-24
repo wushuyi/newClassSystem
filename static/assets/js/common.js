@@ -6,6 +6,7 @@ requirejs.config({
     urlArgs: 'buts=' + (new Date()).getTime(),
     baseUrl: 'assets',
     paths: {
+        config: 'js/config',
         apps: 'js/apps',
         base64: 'libs/base64/0.3.0/base64',
         'dust': 'libs/dustjs-linkedin/2.5.1/dust-core',

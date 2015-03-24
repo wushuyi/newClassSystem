@@ -2,6 +2,7 @@
  * Created by shuyi.wu on 2015/2/12.
  */
 define([
+    'config',
     'jquery',
     'localforage',
     'qjs',
@@ -27,6 +28,7 @@ define([
     'magnificPopupJs',
     'loadImageAll'
 ],function(
+    config,
     $,
     localforage,
     Q,
@@ -41,6 +43,7 @@ define([
 ){
     'use strict';
 
+    console.log(config);
     var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
     var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     var URL = window.URL || window.webkitURL;
@@ -159,6 +162,8 @@ define([
         $cache.upimgCancelBtn = $cache.upimgPop.find('.upimg-cancel-btn');
         $cache.dataSyncingPop = $cache.popList.find('.data-syncing-pop');
         $cache.systemInitErrorPop = $cache.popList.find('.system-init-error');
+        $cache.systemHoldingPop = $cache.popList.find('.system-holding');
+        $cache.linkErrorHoldingPop = $cache.popList.find('.link-error-holding');
 
         deferred.resolve();
         return deferred.promise;
@@ -1306,7 +1311,7 @@ define([
     // 初始化 websocket 连接
     modelSocket.initSocekt = function() {
         var deferred = Q.defer();
-        socket = io(socketIo, 'http://192.168.1.109:10010/');
+        socket = io(socketIo, config.WsServer);
         socket.once('connect', function () {
             socket.on('error', function (data) {
                 swal('服务器出现错误!', data.emit + ': ' + data.info, 'error');
@@ -1320,7 +1325,8 @@ define([
 
     // 初始化交互接口
     modelSocket.initTransport = function() {
-        var accessToken = '5b12ec5a-e331-47ec-b7f2-50e59532a246';
+        var deferred = Q.defer();
+        var accessToken;
         var onSyncData = function(data){
             var syncData =data;
             var nowQuiz = dataCache.nowQuiz;
@@ -1464,13 +1470,27 @@ define([
             modelClass.uploadQuizFg()
                 .then(modelSocket.uploadQuizData)
                 .done(function(){
+                    var saveCurrQuizIdCallBack = function(msg){
+                        swal({
+                            title: msg,
+                            type: 'success'
+                        }, function(){
+                            $.magnificPopup.open({
+                                items: {
+                                    src: $cache.linkErrorHoldingPop
+                                },
+                                type: 'inline',
+                                modal: true
+                            });
+                        });
+                    };
                     socket.once('qC.resSaveCurrQuizId', function(data){
                         if (data.status !== 'success') {
                             $.magnificPopup.close();
                             swal('网络断线保持题目失败!', '', 'error');
                         } else {
                             $.magnificPopup.close();
-                            swal('网络断线保持题目完成!', '', 'success');
+                            saveCurrQuizIdCallBack('网络断线保持题目完成');
                         }
                     });
                     socket.emit('qC.reqSaveCurrQuizId', {
@@ -1479,6 +1499,11 @@ define([
 
                 });
         });
+        config.getToken(function(Token){
+            accessToken = Token;
+            deferred.resolve();
+        });
+        return deferred.promise;
     };
 
     // 对交互接口的逻辑处理
@@ -1490,6 +1515,13 @@ define([
             })
             .then(function (data) {
                 dataCache.selfUserId = data;
+                $.magnificPopup.open({
+                    items: {
+                        src: $cache.systemHoldingPop
+                    },
+                    type: 'inline',
+                    modal: true
+                });
             })
             .then(transport.inRoom)
             .then(function () {
@@ -1510,6 +1542,7 @@ define([
                                         draw: data
                                     });
                                 };
+                                $.magnificPopup.close();
                                 deferred.resolve();
                             });
                     });
