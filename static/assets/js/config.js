@@ -51,7 +51,7 @@ define([
     //serverToken = '95addfcb-3b22-4945-80ac-2190205bb4ea';
     //clientToken = '44e3e7d7-b518-4b68-b771-4330db3bbdf9';
 
-    // 发布时为 getTokenFnDebug, debug 时为 getTokenFnDebug
+    // 发布时为 getTokenFnRelease, debug 时为 getTokenFnDebug
     config.getToken = getTokenFnDebug;
 
     // WebSocket 服务器地址(注意:是 http 协议头)
