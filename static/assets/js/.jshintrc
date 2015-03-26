@@ -61,6 +61,7 @@
     "File": true,
     "FormData": true,
     "setTimeout": true,
+    "setInterval": true,
     "clearTimeout": true,
     "browser": true,
     "couch": false,

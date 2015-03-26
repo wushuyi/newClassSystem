@@ -48,8 +48,8 @@ define([
 
 
     // 发布时注释,debug时拥有改成静态 token
-    //serverToken = '95addfcb-3b22-4945-80ac-2190205bb4ea';
-    //clientToken = '44e3e7d7-b518-4b68-b771-4330db3bbdf9';
+    serverToken = 'a0994f63-45f1-4cf4-b994-8889832d2628';
+    clientToken = 'bb296bf5-cbe3-4e8b-9aba-8641011c0d14';
 
     // 发布时为 getTokenFnRelease, debug 时为 getTokenFnDebug
     config.getToken = getTokenFnDebug;

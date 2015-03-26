@@ -70,6 +70,8 @@ define([
 
     var pc, dc;
 
+    cache.sketchpadLock = true;
+
     // 初始化全局缓存
     modelGCtl.init = function(){
         $cache.win = $(window);
@@ -334,6 +336,37 @@ define([
         });
     };
 
+    // 远程控制题目滚动条
+    modelDom.remoteCtlSketchpadCent = function(data){
+        jspScrollList.sketchpadFn.scrollToY(data.scrollY);
+    };
+
+    // 初始化画板联滚
+    modelDom.initOnScrollSketchpadCent = function(){
+        cache.sketchpadOnce = false;
+        $cache.sketchpadCent.on('jsp-scroll-y', function(event, scrollPositionY, isAtTop, isAtBottom){
+            var data, lock = true;
+            var isNotScroll = isAtTop || isAtBottom;
+            if(isNotScroll && !cache.sketchpadOnce){
+                lock = false;
+                cache.sketchpadOnce = true;
+            }else if(!isNotScroll && cache.sketchpadOnce){
+                lock = false;
+                cache.sketchpadOnce = false;
+            }else if(!cache.sketchpadOnce){
+                lock = false;
+            }
+            if(!lock && !cache.sketchpadLock){
+                data = {
+                    scrollY: scrollPositionY
+                };
+                console.log(data);
+                socket.emit('mFC.reqBoardScroll', data);
+            }
+        });
+        socket.on('mFC.resBoardScroll', modelDom.remoteCtlSketchpadCent);
+    };
+
     // 初始化滚动条
     modelDom.initScrollPane = function(){
         var deferred = Q.defer();
@@ -356,7 +389,8 @@ define([
             }
         });
         jspScrollList.sketchpadFn = $cache.sketchpadCent.jScrollPane({
-            hideFocus: true
+            hideFocus: true,
+            animateScroll: true
         }).data('jsp');
         jspScrollList.taskFn = $cache.taskCent.jScrollPane({
             hideFocus: true
@@ -365,6 +399,29 @@ define([
             hideFocus: true
         }).data('jsp');
         deferred.resolve();
+
+        $cache.sketchpadCent.on('jsp-scroll-y', function(event, scrollPositionY, isAtTop, isAtBottom){
+            if(!cache.sketchpadLock){
+                return false;
+            }
+            var data, lock = true;
+            var isNotScroll = isAtTop || isAtBottom;
+            if(isNotScroll && !cache.sketchpadOnce){
+                lock = false;
+                cache.sketchpadOnce = true;
+            }else if(!isNotScroll && cache.sketchpadOnce){
+                lock = false;
+                cache.sketchpadOnce = false;
+            }else if(!cache.sketchpadOnce){
+                lock = false;
+            }
+            if(!lock){
+                data = {
+                    scrollY: scrollPositionY
+                };
+                console.log(data);
+            }
+        });
         return deferred.promise;
     };
 
@@ -1149,135 +1206,167 @@ define([
         return deferred.promise;
     };
 
-    // 初始化WebRtc
-    modelRtc.initWebrtc = function(){
-        var localVideo = document.createElement('video');
-        var remoteVideo = document.createElement('video');
-        localVideo.autoplay = true;
-        localVideo.muted = true;
-        remoteVideo.autoplay = true;
-        remoteVideo.muted = false;
-        var iceServers = {
-            'iceServers': [
-                {url: 'stun:stun.l.google.com:19302'},
-                {url: 'stun:stun.sipgate.net'},
-                {url: 'stun:217.10.68.152'},
-                {url: 'stun:stun.sipgate.net:10000'},
-                {url: 'stun:217.10.68.152:10000'}
-            ]
+    modelRtc.iceServers = {
+        'iceServers': [
+            {url: 'stun:stun.l.google.com:19302'},
+            {url: 'stun:stun.sipgate.net'},
+            {url: 'stun:217.10.68.152'},
+            {url: 'stun:stun.sipgate.net:10000'},
+            {url: 'stun:217.10.68.152:10000'}
+        ]
+    };
+
+    modelRtc.onAddStream = function(e){
+        $cache.rtcRemoteVideo.src = URL.createObjectURL(e.stream);
+        $cache.rtcRemoteVideo.addEventListener('loadedmetadata', function() {
+            $cache.rtcRemoteVideo.removeEventListener('loadedmetadata');
+            console.log('remoteVideo is ok!');
+        });
+    };
+
+    modelRtc.onIceCandidate = function (e){
+        if(e && e.candidate){
+            socket.emit('mFC.reqRtcIce', e.candidate);
+        }
+    };
+
+    modelRtc.onDataChannel = function(e){
+        var channel = e.channel;
+        //window.dc = dc = channel;
+        modelRtc.initDCEvents(channel);
+    };
+
+    modelRtc.onCreateOffer = function (offer){
+        pc.setLocalDescription(offer, function(){
+            socket.emit('mFC.reqRtcOffer', offer);
+        });
+    };
+
+    modelRtc.onCreateAnswer = function (answer) {
+        pc.setLocalDescription(answer, function(){
+            socket.emit('mFC.reqRtcAnswer', answer);
+        });
+    };
+
+    modelRtc.setOffer = function (offer){
+        var offerAnswerConstraints = {
+            optional: [],
+            mandatory: {
+                OfferToReceiveAudio: true,
+                OfferToReceiveVideo: true
+            }
+        };
+        var error = function(){
+            console.log(arguments);
+        };
+        pc.setRemoteDescription(new RTCSessionDescription(offer), function(){
+            pc.createAnswer(modelRtc.onCreateAnswer, error, offerAnswerConstraints);
+        });
+    };
+
+    modelRtc.setAnswer = function (answer){
+        pc.setRemoteDescription(new RTCSessionDescription(answer));
+    };
+
+    modelRtc.setIce = function(e){
+        if(e && e.candidate){
+            pc.addIceCandidate(new RTCIceCandidate(e));
+        }
+    };
+
+    modelRtc.initRtcEl = function(){
+        $cache.rtcLocalVideo = document.createElement('video');
+        $cache.rtcRemoteVideo = document.createElement('video');
+        $cache.rtcLocalVideo.autoplay = true;
+        $cache.rtcLocalVideo.muted = true;
+        $cache.rtcRemoteVideo.autoplay = true;
+        $cache.rtcRemoteVideo.muted = false;
+
+        $cache.rtcLocalBox.append($cache.rtcLocalVideo);
+        $cache.rtcRemoteBox.append($cache.rtcRemoteVideo);
+
+        $cache.rtcLocalVideo.src = cache.localMediaUrl;
+    };
+
+    modelRtc.initDCEvents = function(channel) {
+        window.dc = dc = channel;
+        window.pc = pc;
+        console.log('onDataChannel: ', dc);
+        dc.onmessage = function (e) {
+            console.log(e);
         };
 
-        function onAddStream(e){
-            remoteVideo.src = URL.createObjectURL(e.stream);
-            remoteVideo.addEventListener('loadedmetadata', function() {
-                console.log('remoteVideo is ok!');
-            });
-        }
-        function onIceCandidate(e) {
-            if(e && e.candidate){
-                socket.emit('mFC.reqRtcIce', e.candidate);
-            }
-        }
-        function onDataChannel(e) {
-            var channel = e.channel;
-            window.dc = dc = channel;
-            initDCEvents();
-        }
-        function initDCEvents() {
-            window.dc = dc;
-            window.pc = pc;
-            console.log('onDataChannel: ', dc);
-            dc.onmessage = function (e) {
-                console.log(e);
-            };
+        dc.onopen = function (e) {
+            console.log('DEBUG: [PEER] DataChannel opened', dc);
+        };
 
-            dc.onopen = function (e) {
-                console.log('DEBUG: [PEER] DataChannel opened', dc);
-            };
+        dc.onclose = function (e) {
+            console.log('DEBUG: [PEER] DataChannel closed');
+        };
 
-            dc.onclose = function (e) {
-                console.log('DEBUG: [PEER] DataChannel closed');
-            };
+        dc.onerror = function (e) {
+            console.log('ERROR: [PEER] DataChannel', e);
+        };
+    };
 
-            dc.onerror = function (e) {
-                console.log('ERROR: [PEER] DataChannel', e);
-            };
-        }
-        function createOffer(){
-            window.dc = dc = pc.createDataChannel('RTCDataChannel', {reliable: false});
-            pc.createOffer(onCreateOffer, function(e){
-                console.log(e);
-            });
-            modelRtc.isShow = true;
-            $cache.winWebrtc.show();
-            initDCEvents();
-        }
-        function onCreateOffer(offer){
-            pc.setLocalDescription(offer, function(){
-                socket.emit('mFC.reqRtcOffer', offer);
-            });
-        }
-        function setOffer(offer){
-            var offerAnswerConstraints = {
-                optional: [],
-                mandatory: {
-                    OfferToReceiveAudio: true,
-                    OfferToReceiveVideo: true
-                }
-            };
-            var error = function(){
-                console.log(arguments);
-            };
-            pc.setRemoteDescription(new RTCSessionDescription(offer), function(){
-                pc.createAnswer(onCreateAnswer, error, offerAnswerConstraints);
-            });
-        }
-        function onCreateAnswer(answer) {
-            pc.setLocalDescription(answer, function(){
-                socket.emit('mFC.reqRtcAnswer', answer);
-            });
-        }
-        function setAnswer(answer){
-            pc.setRemoteDescription(new RTCSessionDescription(answer));
-        }
-        function addStream(stream){
-            pc.addStream(stream);
-        }
-        function setIce(e){
-            if(e && e.candidate){
-                pc.addIceCandidate(new RTCIceCandidate(e));
-            }
-        }
-        function closePc(){
-            pc.close();
-        }
-        function initPeerEvents(){
-            pc.addEventListener('addstream', onAddStream);
-            pc.addEventListener('icecandidate', onIceCandidate);
-            pc.addEventListener('datachannel', onDataChannel);
-        }
-        function initSocket(){
-            socket.on('mFC.resRtcConn', createOffer);
-            socket.on('mFC.resRtcOffer', setOffer);
-            socket.on('mFC.resRtcAnswer', setAnswer);
-            socket.on('mFC.resRtcIce', setIce);
-            socket.on('mFC.resRtcClose', closePc);
-        }
-        initSocket();
+    modelRtc.createOffer = function createOffer(){
+        window.dc = dc = pc.createDataChannel('RTCDataChannel', {reliable: false});
+        pc.createOffer(modelRtc.onCreateOffer, function(e){
+            console.log(e);
+        });
+        modelRtc.initDCEvents(dc);
+        modelRtc.isShow = true;
+        $cache.winWebrtc.show();
+    };
 
-        window.pc = pc = new RTCPeerConnection(iceServers, { optional: [{ RtpDataChannels: true}] });
+    modelRtc.initPeerEvents = function(){
+        pc.removeEventListener('addstream');
+        pc.removeEventListener('icecandidate');
+        pc.removeEventListener('datachannel');
+
+        pc.addEventListener('addstream', modelRtc.onAddStream);
+        pc.addEventListener('icecandidate', modelRtc.onIceCandidate);
+        pc.addEventListener('datachannel', modelRtc.onDataChannel);
+    };
+
+    modelRtc.addStream = function (stream){
+        pc.addStream(stream);
+    };
+
+    modelRtc.closePc = function(){
+        pc.close();
+    };
+
+    modelRtc.initSocket = function (){
+        socket.off('mFC.resRtcConn');
+        socket.off('mFC.resRtcOffer');
+        socket.off('mFC.resRtcAnswer');
+        socket.off('mFC.resRtcIce');
+        socket.off('mFC.resRtcClose');
+
+        socket.on('mFC.resRtcConn', modelRtc.createOffer);
+        socket.on('mFC.resRtcOffer', modelRtc.setOffer);
+        socket.on('mFC.resRtcAnswer', modelRtc.setAnswer);
+        socket.on('mFC.resRtcIce', modelRtc.setIce);
+        socket.on('mFC.resRtcClose', modelRtc.closePc);
+    };
+
+    modelRtc.createPC = function(){
+        window.pc = pc = new RTCPeerConnection(modelRtc.iceServers, {optional: [{ RtpDataChannels: true}] });
         pc.oniceconnectionstatechange = function(e){
             console.log(arguments);
         };
         pc.onsignalingstatechange = function(e){
             console.log(arguments);
         };
-        initPeerEvents();
+    };
 
-        $cache.rtcLocalBox.append(localVideo);
-        $cache.rtcRemoteBox.append(remoteVideo);
-        localVideo.src = cache.localMediaUrl;
-        addStream(cache.localMedia);
+    // 初始化WebRtc
+    modelRtc.initWebrtc = function(){
+        modelRtc.createPC();
+        modelRtc.initSocket();
+        modelRtc.initPeerEvents();
+        modelRtc.addStream(cache.localMedia);
     };
 
     // 连接WebRtc
@@ -1445,8 +1534,10 @@ define([
             console.log(data);
             if(data.data === 'unLock'){
                 $cache.sketchpadLock.show();
+                cache.sketchpadLock = true;
             }else if(data.data === 'lock'){
                 $cache.sketchpadLock.hide();
+                cache.sketchpadLock = false;
             }
         });
         socket.on('mFC.resSwitchTopics', function(data){
@@ -1755,10 +1846,12 @@ define([
             .then(modelSocket.processTransport)
             .then(modelClass.init)
             .done(function(){
+                modelRtc.initRtcEl();
                 modelRtc.initWebrtc();
                 modelDom.dragImg();
                 modelClass.initExitClass();
                 modelBoard.initRemoteCtl();
+                modelDom.initOnScrollSketchpadCent();
             });
     }
 
@@ -1768,6 +1861,7 @@ define([
         window.$cache = $cache;
         window.cache = cache;
         window.dataCache = dataCache;
+        window.modelRtc = modelRtc;
     }
     window.debug = debug;
 });
