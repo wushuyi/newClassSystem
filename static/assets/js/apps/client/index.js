@@ -14,6 +14,7 @@ define([
     'wsy/hf_socket',
     'apps/util/canvas-to-blob',
     'draggabilly',
+    'RunTime',
     'DetectRTC',
     'RTCPeerConnection',
     'dust-temp/taskView',
@@ -39,11 +40,11 @@ define([
     socketIo,
     io,
     dataURLtoBlob,
-    Draggabilly
+    Draggabilly,
+    RunTime
 ){
     'use strict';
 
-    //console.log(config);
     var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
     var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     var URL = window.URL || window.webkitURL;
@@ -255,8 +256,17 @@ define([
 
     // 添加白板回调
     modelClass.addBlankPageCallBack = function(isRemote){
+        var nowQuiz =  dataCache.nowQuiz;
+        var stepFn = new WSY.stepFn(['localOk', 'remoteOk'], function(){
+            setTimeout(function(){
+                $.magnificPopup.close();
+            }, 200);
+        });
+        socket.once('mFC.resAsyncOk', function(){
+            stepFn('remoteOk');
+        });
         if(!isRemote){
-            socket.emit('mFC.reqAddBlankPage');
+            socket.emit('mFC.reqAsyncNeed');
         }
         $.magnificPopup.open({
             items: {
@@ -265,18 +275,20 @@ define([
             type: 'inline',
             modal: true
         });
-        dataCache.nowQuiz.studyBlankPagesindex = dataCache.nowQuiz.studyBlankPages.length;
-        dataCache.nowQuiz.boardType = 2;
-        dataCache.nowQuiz.studyBlankPages.push({
+        if(!isRemote){
+            socket.emit('mFC.reqAddBlankPage');
+        }
+        nowQuiz.studyBlankPagesindex = nowQuiz.studyBlankPages.length;
+        nowQuiz.boardType = 2;
+        nowQuiz.studyBlankPages.push({
             blankPageUrl: '',
             blankPageBgUrl: ''
         });
-        modelClass.initBlankPage(dataCache.nowQuiz.studyBlankPages.length);
+        modelClass.initBlankPage(nowQuiz.studyBlankPages.length);
         modelBoard.setSketchpadView(null, null)
             .then(function(){
-                setTimeout(function(){
-                    $.magnificPopup.close();
-                }, 600);
+                socket.emit('mFC.reqAsyncOk');
+                stepFn('localOk');
             });
     };
 
@@ -1448,6 +1460,8 @@ define([
             modelClass.swichBlankPagesCallBack(data.blankPagesIndex, true);
         });
         socket.on('mFC.resAddBlankPage', function(data){
+            var syncData = data.syncData;
+            onSyncData(syncData);
             modelClass.addBlankPageCallBack(true);
         });
         socket.on('mFC.resAsyncNeed', function(data){
@@ -1752,6 +1766,7 @@ define([
 
     function debug(){
         window.$cache = $cache;
+        window.cache = cache;
         window.dataCache = dataCache;
     }
     window.debug = debug;
