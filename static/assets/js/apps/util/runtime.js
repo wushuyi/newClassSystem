@@ -17,8 +17,14 @@
     function() {
     'use strict';
 
-    function RunTime(time){
-        this._startDate = time ? new Date(time) : new Date();
+    function RunTime(readyTime){
+        if(readyTime){
+            var nowDate;
+            nowDate = new Date();
+            this._startDate = new Date(nowDate - readyTime);
+        }else{
+            this._startDate = new Date();
+        }
     }
 
     RunTime.prototype._addNum = function(num, n){

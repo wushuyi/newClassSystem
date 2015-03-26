@@ -172,6 +172,18 @@ define([
         return deferred.promise;
     };
 
+    // 运行时间
+    modelDom.initRunTime = function(time){
+        cache.runTime = new RunTime(time);
+        //var jsonDate, min;
+        //setInterval(function(){
+        //    jsonDate = cache.runTime.getRunTimeJson();
+        //    min = jsonDate.day * 24 * 60 + jsonDate.hour * 60 + jsonDate.minute;
+        //    $cache.runTimeNum.html(min);
+        //}, 10000);
+        //$cache.runTimeNum.html(0);
+    };
+
     // 题目切换回调
     modelClass.selectQuizCallbcak = function(quizIndex , quizId, isRemote){
         var stepFn = new WSY.stepFn(['localOk', 'remoteOk'], function(){
@@ -1496,6 +1508,7 @@ define([
             socket.once('qC.resClassList', function (data) {
                 if(data.currQuizId){
                     dataCache.currQuizId = data.currQuizId;
+                    dataCache.runTime = data.studyTime || 0;
                 }
                 deferred.resolve(data);
             });
@@ -1606,7 +1619,8 @@ define([
                         }
                     });
                     socket.emit('qC.reqSaveCurrQuizId', {
-                        currQuizId: dataCache.nowQuiz.quizId
+                        currQuizId: dataCache.nowQuiz.quizId,
+                        studyTime: cache.runTime.getRunTime()
                     });
 
                 });
@@ -1800,13 +1814,23 @@ define([
     modelClass.init = function(){
         var deferred = Q.defer();
         if(dataCache.currQuizId){
+            var quizIdIndex;
             dataCache.nowQuiz.quizId = dataCache.currQuizId;
+            $.each(dataCache.quizIdList, function(index, data){
+                if((''+data.quizId) === (''+ dataCache.currQuizId)){
+                    quizIdIndex = data.index;
+                    dataCache.nowQuiz.index = quizIdIndex;
+                    dataCache.nowQuiz.planIndex = quizIdIndex;
+                }
+            });
+            modelDom.initRunTime(dataCache.runTime);
         }else{
             var quizInitData = dataCache.quizIdList[0];
             dataCache.nowQuiz.quizId = quizInitData.quizId;
+            dataCache.nowQuiz.index = 1;
+            dataCache.nowQuiz.planIndex = 1;
+            modelDom.initRunTime();
         }
-        dataCache.nowQuiz.index = 1;
-        dataCache.nowQuiz.planIndex = 1;
         dataCache.nowQuiz.boardType = 1;
         modelDom.leftSessionNeedShow(dataCache.nowQuiz.index - 1);
         modelClass.initQuiz(dataCache.nowQuiz.quizId)

@@ -11,6 +11,7 @@ define([
     var getTokenFnRelease, getTokenFnDebug, serverToken, clientToken;
 
     getTokenFnRelease = function(callback){
+        console.log = function(){};
         var thisFn,lessonPlanId;
         lessonPlanId = location.search.split('?')[1].split('lessonPlanId=')[1];
         thisFn = function(){
@@ -48,8 +49,8 @@ define([
 
 
     // 发布时注释,debug时拥有改成静态 token
-    serverToken = 'a0994f63-45f1-4cf4-b994-8889832d2628';
-    clientToken = 'bb296bf5-cbe3-4e8b-9aba-8641011c0d14';
+    serverToken = 'f0855c8a-ff05-4c2e-990f-7d6af8d3f6f3';
+    clientToken = '6ef853b5-6114-4c11-8df8-ad5446cba83e';
 
     // 发布时为 getTokenFnRelease, debug 时为 getTokenFnDebug
     config.getToken = getTokenFnDebug;
