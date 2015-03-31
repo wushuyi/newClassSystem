@@ -125,47 +125,6 @@
   margin-left: -30px;
   background: url("../images/icon2.png") no-repeat -450px 0px;
 }
-#left-cent .prev-btn:before,
-#right-cent .prev-btn:before {
-  content: normal;
-}
-#left-cent .next-btn:before,
-#right-cent .next-btn:before {
-  content: normal;
-}
-#left-cent .prev-btn,
-#right-cent .prev-btn,
-#left-cent .next-btn,
-#right-cent .next-btn {
-  padding-left: 0;
-  width: 20px;
-}
-#left-cent .prev-btn,
-#right-cent .prev-btn {
-  position: absolute;
-  float: none;
-  right: 100px;
-}
-#left-cent .next-btn,
-#right-cent .next-btn {
-  position: absolute;
-  float: none;
-  right: 10px;
-}
-#left-cent .tool-num,
-#right-cent .tool-num {
-  width: 50px;
-  cursor: pointer;
-  height: 28px;
-  line-height: 28px;
-  color: #747474;
-  text-align: center;
-  margin: 12px 0 8px 0;
-  font-size: 24px;
-  float: none;
-  right: 48px;
-  position: absolute;
-}
 #left-cent .sound-btn,
 #right-cent .sound-btn {
   padding-left: 0;
@@ -276,7 +235,7 @@
   z-index: 2;
 }
 #left-cent .run-time {
-  margin: 18px 120px 0 0;
+  margin: 18px 50px 0 0;
   float: right;
   display: inline-block;
   font-size: 16px;

@@ -234,6 +234,32 @@ html {
   margin-top: 6px;
   margin-left: 14px;
 }
+.pg-select-box {
+  width: 120px;
+  height: 100%;
+  float: right;
+  position: relative;
+  margin-right: 20px;
+}
+.pg-select-box .prev-btn {
+  float: left;
+  margin: 8px 0 8px 0;
+}
+.pg-select-box .next-btn {
+  float: right;
+  margin: 8px 0 8px 0;
+}
+.pg-select-box .tool-num {
+  width: 60px;
+  cursor: pointer;
+  height: 28px;
+  line-height: 30px;
+  color: #A0A0A0;
+  text-align: center;
+  margin: 8px 0 8px 0;
+  font-size: 22px;
+  float: left;
+}
 .load-icon {
   transform: scale(0.5);
   width: 60px;
