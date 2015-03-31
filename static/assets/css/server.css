@@ -16,7 +16,7 @@
 #left-cent {
   top: 0;
   left: 0;
-  width: 744px;
+  width: 544px;
   height: 100%;
   background: #FFFFFF;
   position: absolute;
@@ -24,7 +24,7 @@
 #right-cent {
   top: 0;
   right: 0;
-  width: 602px;
+  width: 802px;
   height: 100%;
   background: #FFFFFF;
   position: absolute;
@@ -43,7 +43,7 @@
   right: 0;
   left: 0;
   bottom: 0;
-  height: 50px;
+  height: 44px;
   position: absolute;
   border-top: 1px solid #D9D9D9;
 }
@@ -74,25 +74,6 @@
   background: #F0f0f0;
   margin: 14px 10px 12px 10px;
   float: left;
-}
-#left-cent .tool-btn,
-#right-cent .tool-btn {
-  cursor: pointer;
-  float: left;
-  font-size: 14px;
-  height: 24px;
-  line-height: 24px;
-  color: #999999;
-  padding-left: 30px;
-  margin: 14px 10px 10px 10px;
-}
-#left-cent .tool-btn:before,
-#right-cent .tool-btn:before {
-  content: '';
-  width: 30px;
-  height: 26px;
-  display: block;
-  position: absolute;
 }
 #left-cent .task-ctl-btn,
 #right-cent .task-ctl-btn {
@@ -323,7 +304,7 @@
   margin: 0 auto;
 }
 #left-cent .scroll {
-  width: 744px;
+  width: 544px;
 }
 #right-cent .sketchpad-cent {
   top: 60px;

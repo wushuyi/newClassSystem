@@ -2181,11 +2181,11 @@ define([
         });
 
 
-        modelDom.initElement()
-            .then(modelRtc.detectRTCInit)
-            .then(modelRtc.DetectRTC)
-            .then(modelRtc.mediaTest)
         //modelDom.initElement()
+        //    .then(modelRtc.detectRTCInit)
+        //    .then(modelRtc.DetectRTC)
+        //    .then(modelRtc.mediaTest)
+        modelDom.initElement()
             .then(modelDom.initScrollPane)
             .then(modelDom.initCtlBtn)
             .then(modelTask.initUMEditor)
@@ -2194,19 +2194,19 @@ define([
             .then(modelBoard.initSketchpadEvent)
             .then(modelBoard.initSketchpadCtl)
             .then(modelSocket.clearIndexDb)
-            .then(modelSocket.initSocekt)
-            .then(modelSocket.initTransport)
-            .then(modelSocket.processTransport)
-            .then(modelClass.init)
+            //.then(modelSocket.initSocekt)
+            //.then(modelSocket.initTransport)
+            //.then(modelSocket.processTransport)
+            //.then(modelClass.init)
             .then(modelDom.initNoFnBtn)
             .done(function(){
-                modelRtc.initRtcEl();
-                modelBoard.initRemoteCtl();
-                modelRtc.initWebrtc();
-                modelDom.dragImg();
-                modelClass.initExitClass();
-                $cache.sketchpadLock.hide();
-                modelDom.initOnScrollSketchpadCent();
+                //modelRtc.initRtcEl();
+                //modelBoard.initRemoteCtl();
+                //modelRtc.initWebrtc();
+                //modelDom.dragImg();
+                //modelClass.initExitClass();
+                //$cache.sketchpadLock.hide();
+                //modelDom.initOnScrollSketchpadCent();
             });
     }
 

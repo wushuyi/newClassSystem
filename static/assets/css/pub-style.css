@@ -50,6 +50,198 @@ textarea:-moz-placeholder {
 html {
   overflow-y: hidden;
 }
+.sprite-icon:before,
+.pen-btn.active:after {
+  content: '';
+  display: inline-block;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  background-image: url('../images/icon.png');
+}
+.icon-add-len:before {
+  width: 20px;
+  height: 22px;
+  background-position: -142px -26px;
+}
+.icon-bg-board:before {
+  width: 20px;
+  height: 22px;
+  background-position: -142px -2px;
+}
+.icon-board-off:before,
+.icon-board-lock.active:before {
+  width: 22px;
+  height: 22px;
+  background-position: -96px -26px;
+}
+.icon-board-on:before,
+.icon-board-lock:before {
+  width: 22px;
+  height: 22px;
+  background-position: -96px -2px;
+}
+.icon-chat:before {
+  width: 22px;
+  height: 20px;
+  background-position: -164px -24px;
+}
+.icon-clear-all:before {
+  width: 22px;
+  height: 20px;
+  background-position: -164px -2px;
+}
+.icon-empty-board:before {
+  width: 20px;
+  height: 22px;
+  background-position: -120px -26px;
+}
+.icon-eraser:before {
+  width: 22px;
+  height: 18px;
+  background-position: -188px -26px;
+}
+.icon-help:before {
+  width: 44px;
+  height: 44px;
+  background-position: -2px -2px;
+}
+.icon-hook,
+.pen-btn.active:after {
+  width: 12px;
+  height: 10px;
+  background-position: -212px -26px;
+}
+.icon-microphone:before {
+  width: 14px;
+  height: 22px;
+  background-position: -209px -2px;
+}
+.icon-mvideo:before {
+  width: 22px;
+  height: 22px;
+  background-position: -72px -26px;
+}
+.icon-pen-black:before {
+  width: 22px;
+  height: 22px;
+  background-position: -72px -2px;
+}
+.icon-pen-red:before {
+  width: 22px;
+  height: 22px;
+  background-position: -48px -26px;
+}
+.icon-retrieval:before {
+  width: 22px;
+  height: 22px;
+  background-position: -48px -2px;
+}
+.icon-video:before {
+  width: 19px;
+  height: 22px;
+  background-position: -188px -2px;
+}
+.icon-whiteboard:before {
+  width: 20px;
+  height: 22px;
+  background-position: -120px -2px;
+}
+.tool-btn {
+  width: 52px;
+  height: 36px;
+  margin: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  float: left;
+  cursor: pointer;
+}
+.pen-btn {
+  width: 22px;
+  height: 22px;
+  margin: 10px 8px;
+  float: left;
+  cursor: pointer;
+  position: relative;
+}
+.pen-btn.active:after {
+  position: absolute;
+  top: 6px;
+  left: 5px;
+}
+.tool-btn.active {
+  border-color: #999999;
+}
+.icon-microphone {
+  margin-left: 24px;
+}
+.icon-microphone:before {
+  margin-top: 6px;
+  margin-left: 18px;
+}
+.icon-chat:before {
+  margin-top: 6px;
+  margin-left: 15px;
+}
+.icon-video:before {
+  margin-top: 6px;
+  margin-left: 15px;
+}
+.icon-mvideo:before {
+  margin-top: 6px;
+  margin-left: 15px;
+}
+.icon-retrieval:before {
+  margin-top: 5px;
+  margin-left: 14px;
+}
+.icon-board-lock {
+  margin-left: 30px;
+}
+.icon-board-lock:before {
+  margin-top: 5px;
+  margin-left: 14px;
+}
+.icon-board-on:before,
+.icon-board-lock:before {
+  margin-top: 5px;
+  margin-left: 14px;
+}
+.icon-pen-black {
+  margin-left: 30px;
+}
+.icon-pen-red {
+  margin-left: 14px;
+}
+.icon-eraser {
+  margin-left: 28px;
+}
+.icon-eraser:before {
+  margin-top: 8px;
+  margin-left: 14px;
+}
+.icon-clear-all:before {
+  margin-top: 6px;
+  margin-left: 14px;
+}
+.icon-clear-all:before {
+  margin-top: 7px;
+  margin-left: 14px;
+}
+.icon-whiteboard {
+  margin-left: 12px;
+}
+.icon-whiteboard:before {
+  margin-top: 6px;
+  margin-left: 14px;
+}
+.load-icon {
+  transform: scale(0.5);
+  width: 60px;
+  height: 60px;
+}
+.load-icon > div {
+  background-color: #3498DB;
+}
 /*
  *   bs2-btn
 */

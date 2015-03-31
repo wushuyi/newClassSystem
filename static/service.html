@@ -29,11 +29,13 @@
 	<!-- 页面标题图标 -->
 	<link rel="shortcut icon" href="favicon.ico" />
 	<!-- css头部加载 有助于 浏览器 渲染 -->
+    <link href="http://fonts.useso.com/css?family=Source+Sans+Pro:600,300" rel="stylesheet" type="text/css">
 	<link rel="stylesheet" href="assets/css/reset.css" /><!-- css 重置 -->
     <link rel="stylesheet" href="assets/libs/sweetalert/0.4.1/sweet-alert.css"/>
     <link rel="stylesheet" href="assets/libs/jScrollPane/2.0.20/jquery.jscrollpane.css"/>
     <link rel="stylesheet" href="assets/libs/magnific-popup.js/1.0.0/magnific-popup.css"/>
     <link rel="stylesheet" href="assets/libs/umeditor-hf/1.2.2/themes/default/css/umeditor.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/libs/loaders/loaders.min.css">
     <link rel="stylesheet" href="assets/css/pub-style.css"/>
 	<link rel="stylesheet" href="assets/css/server.css" />
 	<!-- modernizr 用于处理 各浏览器 兼容 因为要 处理css样式兼容 所以 头部加载 -->
@@ -57,19 +59,26 @@
                 </div>
             </div>
             <div class="toolbar">
-                <div class="tool-btn task-ctl-btn">聊天</div>
-                <div class="separated"></div>
-                <div class="tool-btn add-error-btn">加入错题本</div>
-                <div class="separated"></div>
-                <div class="tool-btn play-video-btn">直播</div>
-                <div class="separated"></div>
-                <div class="tool-btn play-sound-btn">录播</div>
-                <div class="separated"></div>
-                <div class="tool-btn more-plan-btn">更多讲义</div>
-                <div class="separated"></div>
-                <div class="tool-btn prev-btn"></div>
-                <div class="tool-num">999</div>
-                <div class="tool-btn next-btn"></div>
+                <div class="tool-btn sprite-icon icon-microphone"></div>
+                <div class="tool-btn sprite-icon icon-chat"></div>
+                <div class="tool-btn sprite-icon icon-video"></div>
+                <div class="tool-btn sprite-icon icon-mvideo"></div>
+                <div class="tool-btn sprite-icon icon-retrieval"></div>
+                <div style="display: none">
+                    <div class="tool-btn task-ctl-btn">聊天</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn add-error-btn">加入错题本</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn play-video-btn">直播</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn play-sound-btn">录播</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn more-plan-btn">更多讲义</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn prev-btn"></div>
+                    <div class="tool-num">999</div>
+                    <div class="tool-btn next-btn"></div>
+                </div>
             </div>
             <div class="session-cent">
                 <div class="scroll-cent">
@@ -91,24 +100,32 @@
                 </div>
             </div>
             <div class="toolbar">
-                <div class="tool-btn sound-btn"></div>
-                <div class="separated"></div>
-                <div class="tool-btn answer-btn">
-                    <label>
-                        学生答题
-                        <input class="checkbox" type="checkbox" name="answer-btn" id="answer-lock"/>
-                    </label>
+                <div class="tool-btn sprite-icon icon-board-lock"></div>
+                <div class="pen-btn sprite-icon icon-pen-black"></div>
+                <div class="pen-btn sprite-icon icon-pen-red active"></div>
+                <div class="tool-btn sprite-icon icon-eraser"></div>
+                <div class="tool-btn sprite-icon icon-clear-all"></div>
+                <div class="tool-btn sprite-icon icon-whiteboard"></div>
+                <div style="display: none">
+                    <div class="tool-btn sound-btn"></div>
+                    <div class="separated"></div>
+                    <div class="tool-btn answer-btn">
+                        <label>
+                            学生答题
+                            <input class="checkbox" type="checkbox" name="answer-btn" id="answer-lock"/>
+                        </label>
+                    </div>
+                    <div class="separated"></div>
+                    <div class="tool-btn eraser-btn"></div>
+                    <div class="tool-btn pen-red-btn"></div>
+                    <div class="tool-btn pen-black-btn"></div>
+                    <div class="separated"></div>
+                    <div class="tool-btn add-page-btn">空白页</div>
+                    <div class="separated"></div>
+                    <div class="tool-btn prev-btn"></div>
+                    <div class="tool-num">999</div>
+                    <div class="tool-btn next-btn"></div>
                 </div>
-                <div class="separated"></div>
-                <div class="tool-btn eraser-btn"></div>
-                <div class="tool-btn pen-red-btn"></div>
-                <div class="tool-btn pen-black-btn"></div>
-                <div class="separated"></div>
-                <div class="tool-btn add-page-btn">空白页</div>
-                <div class="separated"></div>
-                <div class="tool-btn prev-btn"></div>
-                <div class="tool-num">999</div>
-                <div class="tool-btn next-btn"></div>
             </div>
             <div class="session-cent">
                 <div class="scroll-cent">

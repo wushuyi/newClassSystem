@@ -1,7 +1,7 @@
 /**
  * Created by shuyi.wu on 2014/12/23.
  */
-/* global WSY, clearTimeout */
+/* global clearTimeout */
 (function (module, window) {
     'use strict';
     define([], module(window));
