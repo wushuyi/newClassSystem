@@ -1218,15 +1218,7 @@ define([
         return deferred.promise;
     };
 
-    modelRtc.iceServers = {
-        'iceServers': [
-            {url: 'stun:stun.l.google.com:19302'},
-            {url: 'stun:stun.sipgate.net'},
-            {url: 'stun:217.10.68.152'},
-            {url: 'stun:stun.sipgate.net:10000'},
-            {url: 'stun:217.10.68.152:10000'}
-        ]
-    };
+    modelRtc.iceServers = config.iceServers;
 
     modelRtc.onAddStream = function(e){
         $cache.rtcRemoteVideo.src = URL.createObjectURL(e.stream);

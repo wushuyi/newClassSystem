@@ -126,6 +126,7 @@ define([
         $cache.taskCent = $cache.taskBoxCent.find('.task-cent');
         $cache.leftSessionCent = $cache.leftCent.find('.session-cent');
         $cache.rightSessionCent = $cache.rightCent.find('.session-cent');
+        $cache.boardCtlCent = $cache.rightCent.find('.board-ctl-cent');
 
         $cache.leftSessionScrollCent = $cache.leftSessionCent.find('.scroll-cent');
         $cache.leftSessionScroll = $cache.leftSessionCent.find('.scroll');
@@ -133,7 +134,7 @@ define([
         $cache.rightSessionScroll = $cache.rightSessionCent.find('.scroll');
         $cache.blankPages = $cache.rightSessionScroll.find('.add-list .class-list ul');
 
-        $cache.answerLock = $('#answer-lock');
+        //$cache.answerLock = $('#answer-lock');
 
         $cache.leftCentTopBar = $cache.leftCent.find('.topbar');
         $cache.leftCentToolBar = $cache.leftCent.find('.toolbar');
@@ -162,10 +163,12 @@ define([
         $cache.sketchpadScroll = $cache.sketchpadCent.find('.scroll');
 
         $cache.soundBtn = $cache.rightCentToolBar.find('.sound-btn');
-        $cache.answerBtn = $cache.rightCentToolBar.find('.answer-btn');
-        $cache.eraserBtn = $cache.rightCentToolBar.find('.eraser-btn');
-        $cache.penRedBtn = $cache.rightCentToolBar.find('.pen-red-btn');
-        $cache.penBlackBtn = $cache.rightCentToolBar.find('.pen-black-btn');
+        $cache.answerBtn = $cache.rightCentToolBar.find('.icon-board-lock');
+        $cache.eraserBtn = $cache.rightCentToolBar.find('.icon-eraser');
+        $cache.penRedBtn = $cache.rightCentToolBar.find('.icon-pen-red');
+        $cache.penBlackBtn = $cache.rightCentToolBar.find('.icon-pen-black');
+        $cache.eraserAllBtn = $cache.rightCentToolBar.find('.icon-clear-all');
+        $cache.whiteboardCtlBtn = $cache.rightCentToolBar.find('.icon-whiteboard');
         $cache.addPageBtn = $cache.rightCentToolBar.find('.add-page-btn');
 
         $cache.rightPrevBtn = $cache.rightCentToolBar.find('.prev-btn');
@@ -174,7 +177,7 @@ define([
 
 
         $cache.taskScroll = $cache.taskCent.find('.scroll');
-        $cache.taskCtlBtn = $cache.leftCentToolBar.find('.task-ctl-btn');
+        $cache.taskCtlBtn = $cache.leftCentToolBar.find('.icon-chat');
         $cache.taskName = $cache.taskBoxCent.find('.task-name');
         $cache.taskClose = $cache.taskBoxCent.find('.task-close');
 
@@ -663,16 +666,17 @@ define([
         // 聊天框 end
 
         // 控制按钮 start
-        $cache.answerLock.on('change', function (e) {
-            var checked = $cache.answerLock.prop('checked');
-            if (checked) {
+        $cache.answerBtn.on('click', function (e) {
+            if (!cache.sketchpadLock) {
                 $cache.sketchpadLock.show();
+                $cache.answerBtn.addClass('active');
                 socket.emit('mFC.reqAnswerLock', {
                     data: 'lock'
                 });
                 cache.sketchpadLock = true;
             }else{
                 $cache.sketchpadLock.hide();
+                $cache.answerBtn.removeClass('active');
                 socket.emit('mFC.reqAnswerLock', {
                     data: 'unLock'
                 });
@@ -1296,7 +1300,7 @@ define([
     // 初始化画布控制
     modelBoard.initSketchpadCtl = function() {
         var deferred = Q.defer();
-        var eraser, pen, penBlack, penRed, myBoard;
+        var eraser, eraserAll, pen, penBlack, penRed, myBoard;
         myBoard = cache.Board;
         eraser = function (isRemote) {
             lockCtl.drawType = 'eraser';
@@ -1304,6 +1308,9 @@ define([
                 //socket.emit('boardCtl', gData.otherId, 'eraser');
                 return false;
             }
+        };
+        eraserAll = function() {
+            myBoard.eraserAll();
         };
         pen = function (isRemote) {
             lockCtl.drawType = 'pen';
@@ -1338,15 +1345,52 @@ define([
         myBoard.setStyle('strokeStyle', 'black');
 
         $cache.penBlackBtn.on('click', function () {
+            $cache.eraserBtn.removeClass('active');
+            $cache.penBlackBtn.addClass('active');
+            $cache.penRedBtn.removeClass('active');
             pen();
             penBlack();
         });
         $cache.penRedBtn.on('click', function () {
+            $cache.eraserBtn.removeClass('active');
+            $cache.penBlackBtn.removeClass('active');
+            $cache.penRedBtn.addClass('active');
             pen();
             penRed();
         });
         $cache.eraserBtn.on('click', function () {
+            $cache.eraserBtn.addClass('active');
+            $cache.penBlackBtn.removeClass('active');
+            $cache.penRedBtn.removeClass('active');
             eraser();
+        });
+        $cache.eraserAllBtn.on('click', function(){
+            $cache.eraserAllBtn.addClass('active');
+            swal({
+                title: '清除白板的内容?',
+                type: 'warning',
+                confirmButtonText: '确认',
+                cancelButtonText: '取消',
+                showCancelButton: true
+            }, function(isConfirm) {
+                if (isConfirm) {
+                    eraserAll();
+                }
+                $cache.eraserAllBtn.removeClass('active');
+            });
+        });
+        cache.boardCtlCentIsOpen = false;
+        $cache.whiteboardCtlBtn.on('click', function(){
+            if(!cache.boardCtlCentIsOpen){
+                $cache.whiteboardCtlBtn.addClass('active');
+                $cache.boardCtlCent.show();
+                cache.boardCtlCentIsOpen = true;
+            }else{
+                $cache.whiteboardCtlBtn.removeClass('active');
+                $cache.boardCtlCent.hide();
+                cache.boardCtlCentIsOpen = false;
+            }
+
         });
         deferred.resolve();
         return deferred.promise;
@@ -1571,15 +1615,7 @@ define([
         return deferred.promise;
     };
 
-    modelRtc.iceServers = {
-        'iceServers': [
-            {url: 'stun:stun.l.google.com:19302'},
-            {url: 'stun:stun.sipgate.net'},
-            {url: 'stun:217.10.68.152'},
-            {url: 'stun:stun.sipgate.net:10000'},
-            {url: 'stun:217.10.68.152:10000'}
-        ]
-    };
+    modelRtc.iceServers = config.iceServers;
 
     modelRtc.onAddStream = function(e){
         $cache.rtcRemoteVideo.src = URL.createObjectURL(e.stream);

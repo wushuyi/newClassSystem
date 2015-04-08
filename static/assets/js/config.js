@@ -60,5 +60,17 @@ define([
 
     // 结束上课跳转页面设置
     config.endCLassUrl = 'https://www.baidu.com/';
+
+    // WebRtc server list
+    config.iceServers = {
+        'iceServers': [
+            {url: 'turn:112.124.33.246'}
+            //{url: 'stun:stun.l.google.com:19302'},
+            //{url: 'stun:stun.sipgate.net'},
+            //{url: 'stun:217.10.68.152'},
+            //{url: 'stun:stun.sipgate.net:10000'},
+            //{url: 'stun:217.10.68.152:10000'}
+        ]
+    };
     return config;
 });

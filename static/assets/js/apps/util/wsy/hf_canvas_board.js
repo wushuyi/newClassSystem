@@ -15,4 +15,10 @@ define([
     };
     WSY.hfCanvasBoard.prototype =  WSY.CanvasBoard.prototype;
     proto = WSY.hfCanvasBoard.prototype;
+    proto.eraserAll = function(){
+        var self = this;
+        var canvas = self._canvas.canvas;
+        var ctx = self._canvas.context;
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+    };
 });
