@@ -116,6 +116,7 @@ define([
         $cache.winImgZoom = $cache.winImg.find('.zoom-img');
 
         $cache.winWebrtc = $('#win-webrtc');
+        $cache.winWebrtcClose = $cache.winWebrtc.find('.win-close');
         $cache.rtcLocalBox = $cache.winWebrtc.find('.localBox');
         $cache.rtcRemoteBox = $cache.winWebrtc.find('.remoteBox');
         $cache.rtcLocalVideo = $cache.rtcLocalBox.find('video');
@@ -1799,6 +1800,9 @@ define([
             modelRtc.microphoneBtnFn();
         });
         $cache.videoBtn.on('click', function(){
+            modelRtc.videoBtnFn();
+        });
+        $cache.winWebrtcClose.on('click', function(){
             modelRtc.videoBtnFn();
         });
     };
