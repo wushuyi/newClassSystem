@@ -167,7 +167,9 @@ define([
         $cache.penBlackBtn = $cache.rightCentToolBar.find('.icon-pen-black');
         $cache.eraserAllBtn = $cache.rightCentToolBar.find('.icon-clear-all');
         $cache.whiteboardCtlBtn = $cache.rightCentToolBar.find('.icon-whiteboard');
-        $cache.addPageBtn = $cache.rightCentToolBar.find('.add-page-btn');
+
+        $cache.boardCtlCent =  $cache.rightCent.find('.board-ctl-cent');
+        $cache.addPageBtn = $cache.boardCtlCent.find('.icon-empty-board');
 
         $cache.rightPrevBtn = $cache.rightCentToolBar.find('.prev-btn');
         $cache.rightToolNum = $cache.rightCentToolBar.find('.tool-num');
