@@ -234,6 +234,31 @@ html {
   margin-top: 6px;
   margin-left: 14px;
 }
+.icon-add-len:after {
+  content: '白板加长';
+}
+.icon-empty-board:after {
+  content: '空的白板';
+}
+.icon-bg-board:after {
+  content: '图片插入';
+}
+.board-ctl-btn:after {
+  position: relative;
+  top: -4px;
+  left: 18px;
+  color: #999999;
+}
+.board-ctl-btn {
+  margin: 5px 6px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.board-ctl-btn:hover {
+  border-color: #999999;
+}
 .pg-select-box {
   width: 120px;
   height: 100%;
@@ -242,12 +267,14 @@ html {
   margin-right: 20px;
 }
 .pg-select-box .prev-btn {
-  float: left;
   margin: 8px 0 8px 0;
+  position: absolute;
+  left: 0;
 }
 .pg-select-box .next-btn {
-  float: right;
   margin: 8px 0 8px 0;
+  position: absolute;
+  right: 0;
 }
 .pg-select-box .tool-num {
   width: 60px;
@@ -258,7 +285,15 @@ html {
   text-align: center;
   margin: 8px 0 8px 0;
   font-size: 22px;
-  float: left;
+  position: absolute;
+  left: 30px;
+}
+#help-btn {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  bottom: 54px;
+  left: 16px;
 }
 .load-icon {
   transform: scale(0.5);
@@ -889,6 +924,9 @@ input[type="submit"].btn.btn-mini {
 .jspCap {
   height: 10px;
   display: block;
+}
+.jspHorizontalBar {
+  background: #FAFAFA;
 }
 /* um editor style reset */
 .edui-btn-toolbar .edui-tooltip {

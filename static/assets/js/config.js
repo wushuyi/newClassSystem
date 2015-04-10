@@ -49,14 +49,14 @@ define([
 
 
     // 发布时注释,debug时拥有改成静态 token
-    serverToken = 'f0855c8a-ff05-4c2e-990f-7d6af8d3f6f3';
-    clientToken = '6ef853b5-6114-4c11-8df8-ad5446cba83e';
+    serverToken = 'ddeead23-602f-4533-938a-0fffcd63e107';
+    clientToken = 'e00f148c-1aa6-4ebe-9ab9-be03aef00dbc';
 
     // 发布时为 getTokenFnRelease, debug 时为 getTokenFnDebug
     config.getToken = getTokenFnDebug;
 
     // WebSocket 服务器地址(注意:是 http 协议头)
-    config.WsServer = 'http://192.168.1.109:10010/';
+    config.WsServer = 'http://192.168.1.143:10010/';
 
     // 结束上课跳转页面设置
     config.endCLassUrl = 'https://www.baidu.com/';

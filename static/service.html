@@ -80,9 +80,6 @@
                     <div class="separated"></div>
                     <div class="tool-btn more-plan-btn">更多讲义</div>
                     <div class="separated"></div>
-                    <div class="tool-btn prev-btn"></div>
-                    <div class="tool-num">999</div>
-                    <div class="tool-btn next-btn"></div>
                 </div>
             </div>
             <div class="session-cent">
@@ -107,7 +104,7 @@
             <div class="toolbar">
                 <div class="tool-btn sprite-icon icon-board-lock"></div>
                 <div class="pen-btn sprite-icon icon-pen-black"></div>
-                <div class="pen-btn sprite-icon icon-pen-red active"></div>
+                <div class="pen-btn sprite-icon icon-pen-red"></div>
                 <div class="tool-btn sprite-icon icon-eraser"></div>
                 <div class="tool-btn sprite-icon icon-clear-all"></div>
                 <div class="tool-btn sprite-icon icon-whiteboard"></div>
@@ -132,10 +129,12 @@
                     <div class="separated"></div>
                     <div class="tool-btn add-page-btn">空白页</div>
                     <div class="separated"></div>
-                    <div class="tool-btn prev-btn"></div>
-                    <div class="tool-num">999</div>
-                    <div class="tool-btn next-btn"></div>
                 </div>
+            </div>
+            <div class="board-ctl-cent">
+                <div class="board-ctl-btn sprite-icon icon-add-len"></div>
+                <div class="board-ctl-btn sprite-icon icon-empty-board"></div>
+                <div class="board-ctl-btn sprite-icon icon-bg-board"></div>
             </div>
             <div class="session-cent">
                 <div class="scroll-cent">
@@ -164,19 +163,7 @@
             </div>
             <div id="sketchpad-lock"></div>
         </div>
-        <div id="task-box-cent">
-            <div class="task-topbar">
-                <div id="task-name" class="task-name">老师A</div>
-                <div class="task-close"></div>
-            </div>
-            <div class="task-cent">
-                <div class="scroll">
-                </div>
-            </div>
-            <div class="task-btmbar">
-                <div id="myEditor" contenteditable="true"></div>
-            </div>
-        </div>
+
         <div id="pop-list">
             <div class="pop-box test-media-pop">
                 <div class="pop-box-top">
@@ -282,6 +269,20 @@
                 </div>
             </div>
         </div>
+        <div id="help-btn" class="sprite-icon icon-help"></div>
+    </div>
+    <div id="task-box-cent">
+        <div class="task-topbar">
+            <div id="task-name" class="task-name">老师A</div>
+            <div class="task-close"></div>
+        </div>
+        <div class="task-cent">
+            <div class="scroll">
+            </div>
+        </div>
+        <div class="task-btmbar">
+            <div id="myEditor" contenteditable="true"></div>
+        </div>
     </div>
     <div id="win-img" class="win-box">
         <div class="win-topbar">
@@ -297,10 +298,10 @@
         </div>
         <div class="win-cent">
             <div class="remoteBox">
-
+                <video src="" autoplay ></video>
             </div>
             <div class="localBox">
-
+                <video src="" autoplay muted></video>
             </div>
         </div>
     </div>

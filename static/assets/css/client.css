@@ -8,7 +8,7 @@
   position: absolute;
 }
 #main {
-  width: 1004px;
+  width: 1204px;
   height: 100%;
   margin: 0 auto;
   position: relative;
@@ -16,7 +16,7 @@
 #left-cent {
   top: 0;
   left: 0;
-  width: 602px;
+  width: 802px;
   height: 100%;
   background: #FFFFFF;
   position: absolute;
@@ -36,7 +36,6 @@
   height: 50px;
   position: absolute;
   border-top: 1px solid #D9D9D9;
-  padding-left: 448px;
 }
 #left-cent .title {
   display: inline-block;
@@ -63,57 +62,6 @@
   margin: 14px 10px 12px 10px;
   float: left;
 }
-#left-cent .tool-btn {
-  cursor: pointer;
-  float: left;
-  font-size: 14px;
-  height: 24px;
-  line-height: 24px;
-  color: #999999;
-  padding-left: 30px;
-  margin: 14px 10px 10px 10px;
-}
-#left-cent .tool-btn:before {
-  content: '';
-  width: 30px;
-  height: 26px;
-  display: block;
-  position: absolute;
-}
-#left-cent .prev-btn:before {
-  content: normal;
-}
-#left-cent .next-btn:before {
-  content: normal;
-}
-#left-cent .prev-btn,
-#left-cent .next-btn {
-  padding-left: 0;
-  width: 20px;
-}
-#left-cent .prev-btn {
-  position: absolute;
-  float: none;
-  right: 100px;
-}
-#left-cent .next-btn {
-  position: absolute;
-  float: none;
-  right: 10px;
-}
-#left-cent .tool-num {
-  width: 50px;
-  cursor: pointer;
-  height: 28px;
-  line-height: 28px;
-  color: #747474;
-  text-align: center;
-  margin: 12px 0 8px 0;
-  font-size: 24px;
-  float: none;
-  right: 48px;
-  position: absolute;
-}
 #left-cent .sketchpad-cent {
   top: 60px;
   bottom: 50px;
@@ -129,7 +77,7 @@
   margin: 0 auto;
 }
 #left-cent .scroll {
-  width: 602px;
+  width: 802px;
 }
 #left-cent .session-cent {
   position: absolute;
@@ -480,5 +428,13 @@
   top: 0;
   left: 0;
   right: 0;
+  bottom: 50px;
+}
+#sketchpad-lock .rb-box {
+  margin-bottom: -50px;
+  width: 200px;
+  height: 50px;
+  position: absolute;
   bottom: 0;
+  right: 0;
 }

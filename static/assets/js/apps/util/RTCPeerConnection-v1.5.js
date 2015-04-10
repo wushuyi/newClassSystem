@@ -1,16 +1,7 @@
-// Last time updated at 26 Feb 2014, 08:32:23
+window.moz = !!navigator.mozGetUserMedia;
+var chromeVersion = !!navigator.mozGetUserMedia ? 0 : parseInt(navigator.userAgent.match( /Chrom(e|ium)\/([0-9]+)\./ )[2]);
 
-// Muaz Khan     - github.com/muaz-khan
-// MIT License   - www.WebRTC-Experiment.com/licence
-// Documentation - github.com/muaz-khan/WebRTC-Experiment/tree/master/RTCPeerConnection
-(function(window){
-    'use strict';
-
-    window.moz = !!navigator.mozGetUserMedia;
-    var chromeVersion = !!navigator.mozGetUserMedia ? 0 : parseInt(navigator.userAgent.match( /Chrom(e|ium)\/([0-9]+)\./ )[2]);
-
-
-    function RTCPeerConnection(options) {
+function rtcPeerConnection(options) {
     var w = window,
         PeerConnection = w.mozRTCPeerConnection || w.webkitRTCPeerConnection,
         SessionDescription = w.mozRTCSessionDescription || w.RTCSessionDescription,
@@ -121,12 +112,12 @@
     };
 
     var constraints = options.constraints || {
-        optional: [],
-        mandatory: {
-            OfferToReceiveAudio: true,
-            OfferToReceiveVideo: true
-        }
-    };
+            optional: [],
+            mandatory: {
+                OfferToReceiveAudio: true,
+                OfferToReceiveVideo: true
+            }
+        };
 
     console.debug('sdp-constraints', JSON.stringify(constraints.mandatory, null, '\t'));
 
@@ -201,12 +192,12 @@
 
         if (!moz) return;
         navigator.mozGetUserMedia({
-                audio: true,
-                fake: true
-            }, function(stream) {
-                peer.addStream(stream);
-                createOffer();
-            }, useless);
+            audio: true,
+            fake: true
+        }, function(stream) {
+            peer.addStream(stream);
+            createOffer();
+        }, useless);
     }
 
     function _openOffererChannel() {
@@ -251,12 +242,12 @@
 
         if (!moz) return;
         navigator.mozGetUserMedia({
-                audio: true,
-                fake: true
-            }, function(stream) {
-                peer.addStream(stream);
-                createAnswer();
-            }, useless);
+            audio: true,
+            fake: true
+        }, function(stream) {
+            peer.addStream(stream);
+            createAnswer();
+        }, useless);
     }
 
     // fake:true is also available on chrome under a flag!
@@ -300,22 +291,22 @@
     };
 }
 
-    // getUserMedia
-    var video_constraints = {
-        mandatory: { },
-        optional: []
-    };
+// getUserMedia
+var video_constraints = {
+    mandatory: { },
+    optional: []
+};
 
-    function getUserMedia(options) {
+function getUserMedia(options) {
     var n = navigator,
-        media;
+        media = {};
     n.getMedia = n.webkitGetUserMedia || n.mozGetUserMedia;
     n.getMedia(options.constraints || {
-            audio: true,
-            video: video_constraints
-        }, streaming, options.onerror || function(e) {
-            console.error(e);
-        });
+        audio: true,
+        video: video_constraints
+    }, streaming, options.onerror || function(e) {
+        console.error(e);
+    });
 
     function streaming(stream) {
         var video = options.video;
@@ -324,12 +315,8 @@
             video.play();
         }
         options.onsuccess && options.onsuccess(stream);
-        media = stream;
+        media.stream = stream;
     }
 
     return media;
 }
-
-    window.RTCPeerConnection = RTCPeerConnection;
-    window.getUserMedia = getUserMedia;
-})(window);
