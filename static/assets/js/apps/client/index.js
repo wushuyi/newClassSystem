@@ -1364,10 +1364,12 @@ define([
         if(!modelRtc.lock.video){
             modelRtc.removeVideo();
             $cache.videoBtn.removeClass('active');
+            $cache.winWebrtc.hide();
             modelRtc.lock.video = true;
         } else {
             modelRtc.addVideo();
             $cache.videoBtn.addClass('active');
+            $cache.winWebrtc.show();
             modelRtc.lock.video = false;
         }
     };
