@@ -1669,11 +1669,7 @@ define([
         };
 
         var conf = {
-            iceServers: [
-                {
-                    url: 'turn:112.124.33.246'
-                }
-            ],
+            iceServers: modelRtc.iceServers,
             bandwidth: p360RtcWidth,
             //attachStream: MediaStream,
             //attachStreams: [MediaStream_1, MediaStream_2, MediaStream_3],

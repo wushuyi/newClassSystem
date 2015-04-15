@@ -62,15 +62,15 @@ define([
     config.endCLassUrl = 'https://www.baidu.com/';
 
     // WebRtc server list
-    config.iceServers = {
-        'iceServers': [
-            {url: 'turn:112.124.33.246'}
-            //{url: 'stun:stun.l.google.com:19302'},
-            //{url: 'stun:stun.sipgate.net'},
-            //{url: 'stun:217.10.68.152'},
-            //{url: 'stun:stun.sipgate.net:10000'},
-            //{url: 'stun:217.10.68.152:10000'}
-        ]
-    };
+    config.iceServers = [
+        {url: 'turn:223.202.64.89', username: 'tupo', password: 'tupo'}
+        //{url: 'turn:112.124.33.246'}
+        //{url: 'stun:stun.l.google.com:19302'},
+        //{url: 'stun:stun.sipgate.net'},
+        //{url: 'stun:217.10.68.152'},
+        //{url: 'stun:stun.sipgate.net:10000'},
+        //{url: 'stun:217.10.68.152:10000'}
+    ];
+
     return config;
 });
