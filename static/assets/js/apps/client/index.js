@@ -64,6 +64,7 @@ define([
         transport = {},
         dataCache = {};
 
+    // 画板锁变量
     cache.sketchpadLock = true;
 
     // 初始化全局缓存
@@ -1218,19 +1219,25 @@ define([
         return deferred.promise;
     };
 
+    // 设置穿透服务器
     modelRtc.iceServers = config.iceServers;
 
+    // webrtc 配置变量
     modelRtc.configuration = {};
 
+    // RtcPeer 对象保存
     modelRtc.rtcPeer = null;
 
+    // WebRTC 锁
     modelRtc.lock = {
         microphone: false,
         video: false
     };
 
+    // RtcPeer 是否断开变量
     modelRtc.isPeerRemove = false;
 
+    // 获取rtc 配置文件
     modelRtc.getRtcConfig = function(){
         var p120RtcWidth= {
             audio: 60,
@@ -1310,6 +1317,7 @@ define([
         return conf;
     };
 
+    // 发起RTC呼叫
     modelRtc.call = function(){
         modelRtc.hang();
         modelRtc.configuration = modelRtc.getRtcConfig();
@@ -1324,6 +1332,7 @@ define([
         modelRtc.rtcPeer = rtcPeerConnection(modelRtc.configuration);
     };
 
+    // 挂断RTC
     modelRtc.hang = function(isRemote){
         if(modelRtc.rtcPeer && modelRtc.rtcPeer.peer && modelRtc.rtcPeer.peer.iceConnectionState !== 'closed'){
             modelRtc.rtcPeer.peer.close();
@@ -1333,6 +1342,7 @@ define([
         }
     };
 
+    // 响应RTC呼叫
     modelRtc.onCall = function(sdp){
         modelRtc.configuration = modelRtc.getRtcConfig();
         cache.sendMedia = cache.localMedia.clone();
@@ -1347,6 +1357,7 @@ define([
         modelRtc.rtcPeer = rtcPeerConnection(modelRtc.configuration);
     };
 
+    // RTC连接完毕回调
     modelRtc.onPeerConn = function(){
         $cache.winWebrtc.show();
         $cache.microphoneBtn.addClass('active');
@@ -1354,6 +1365,7 @@ define([
         modelRtc.initEvent();
     };
 
+    // 视频开关按钮执行函数
     modelRtc.videoBtnFn = function(isRemove){
         if(!isRemove) {
             modelRtc.rtcPeer.sendData('videoBtn');
@@ -1371,6 +1383,7 @@ define([
         }
     };
 
+    // 麦克风开关按钮执行函数
     modelRtc.microphoneBtnFn = function(isRemove){
         if(!isRemove){
             modelRtc.rtcPeer.sendData('microphoneBtn');
@@ -1386,6 +1399,7 @@ define([
         }
     };
 
+    // 初始化RTC UI 事件监听
     modelRtc.initEvent = function(){
         $cache.microphoneBtn.on('click', function(){
             modelRtc.microphoneBtnFn();
@@ -1398,6 +1412,7 @@ define([
         });
     };
 
+    // 获取远端媒体流回调
     modelRtc.onRemoteStream = function(stream){
         if(cache.remoteMediaUrl){
             URL.revokeObjectURL(cache.remoteMediaUrl);
@@ -1407,10 +1422,12 @@ define([
         $cache.rtcRemoteVideo.get(0).src = cache.remoteMediaUrl;
     };
 
+    // 获取本地媒体流回调
     modelRtc.onGetUserMediaSuccess = function(){
         $cache.rtcLocalVideo.get(0).src =cache.localMediaUrl;
     };
 
+    // 绑定RTC的 Socekt.io 传输
     modelRtc.initRtcSocket = function(){
         socket.on('mFC.resRtcOffer', function(e){
             modelRtc.onCall(e);
@@ -1429,6 +1446,7 @@ define([
         });
     };
 
+    // RTC通道添加视频流
     modelRtc.addVideo = function(){
         if(!modelRtc.isPeerRemove){
             modelRtc.addAll();
@@ -1438,6 +1456,7 @@ define([
         modelRtc.rtcPeer.peer.addStream(cache.sendMedia);
     };
 
+    // RTC通道添加音频流
     modelRtc.addAudio = function(){
         if(!modelRtc.isPeerRemove){
             modelRtc.addAll();
@@ -1447,6 +1466,7 @@ define([
         modelRtc.rtcPeer.peer.addStream(cache.sendMedia);
     };
 
+    // RTC通道移除视频流
     modelRtc.removeVideo = function(){
         if(cache.sendMedia.getTracks().length === 1){
             modelRtc.removeAll();
@@ -1457,6 +1477,7 @@ define([
         modelRtc.rtcPeer.peer.addStream(cache.sendMedia);
     };
 
+    // RTC通道移除音频流
     modelRtc.removeAudio = function(){
         if(cache.sendMedia.getTracks().length === 1){
             modelRtc.removeAll();
@@ -1467,16 +1488,19 @@ define([
         modelRtc.rtcPeer.peer.addStream(cache.sendMedia);
     };
 
+    // RTC通道移除整个媒体流
     modelRtc.removeAll = function(){
         modelRtc.rtcPeer.peer.removeStream(cache.sendMedia);
         modelRtc.isPeerRemove = true;
     };
 
+    // RTC通道添加整个媒体流
     modelRtc.addAll = function(){
         modelRtc.rtcPeer.peer.addStream(cache.sendMedia);
         modelRtc.isPeerRemove = false;
     };
 
+    // 初始化WebRTC
     modelRtc.initWebrtc = function(){
         modelRtc.initRtcSocket();
         modelRtc.onGetUserMediaSuccess();
